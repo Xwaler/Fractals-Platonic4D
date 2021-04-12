@@ -4,7 +4,7 @@ in vec3 fragPos;
 in vec3 vNormal;
 in vec3 vColor;
 
-uniform vec3 color;
+uniform vec4 color;
 
 out vec4 FragColor;
 
@@ -14,8 +14,8 @@ struct light {
 };
 
 light lights[2] = {
-    light(vec3(5.0f, 6.0f, 3.0f), vec3(0.5f, 0.0f, 0.0f)),
-    light(vec3(-3.0f, -10.0f, -5.0f), vec3(0.0f, 0.0f, 0.5f)),
+    light(vec3(5.0f, 6.0f, 3.0f), vec3(1.0f, 1.0f, 1.0f)),
+    light(vec3(-3.0f, -10.0f, -5.0f), vec3(1.0f, 1.0f, 1.0f)),
 };
 
 void main() {
@@ -29,6 +29,6 @@ void main() {
         result += diffuse; // add to the resulting fragment color
     }
 
-    result *= color; // apply the objects original color
-    FragColor = vec4(result, 1.0);
+    result *= color.rgb; // apply the objects original color
+    FragColor = vec4(result, color.a); // add transparency
 }

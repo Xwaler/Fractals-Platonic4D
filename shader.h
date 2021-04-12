@@ -1,7 +1,3 @@
-//
-// Created by xwaler on 12/04/2021.
-//
-
 #ifndef FRACTALS_PLATONIC4D_SHADER_H
 #define FRACTALS_PLATONIC4D_SHADER_H
 
