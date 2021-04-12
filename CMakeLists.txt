@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.16)
 project(Fractals-Platonic4D)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -7,7 +7,7 @@ set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libraries")
 find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp shader.h)
 
 target_link_libraries(${PROJECT_NAME} glfw)
 target_link_libraries(${PROJECT_NAME} OpenGL::GL)
