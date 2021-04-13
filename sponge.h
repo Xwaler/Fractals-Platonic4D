@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-static void addLine(const std::vector<float>& line, std::vector<float>& result){
+static void addLine(const std::vector<float> &line, std::vector<float> &result) {
 
     result.push_back(line[0]);
     result.push_back(line[1]);
@@ -25,7 +25,7 @@ static void addLine(const std::vector<float>& line, std::vector<float>& result){
     result.push_back(line[5]);
 }
 
-static void addSquare(const std::vector<float>& square, std::vector<float>& result) {
+static void addSquare(const std::vector<float> &square, std::vector<float> &result) {
     {
         std::vector<float> line(square.begin(), square.begin() + 6);
         addLine(line, result);
@@ -65,7 +65,8 @@ static void addSquare(const std::vector<float>& square, std::vector<float>& resu
  * adjacent to the first vertex of the first face and so one)
  * @return the array of vertices describing the Mender Sponge demanded
  */
-void subdivide(uint8_t rank, const std::vector<float>& cube, std::vector<float> &vertices, std::vector<unsigned int> &indices){
+void subdivide(uint8_t rank, const std::vector<float> &cube, std::vector<float> &vertices,
+               std::vector<unsigned int> &indices, std::vector<float> &normals) {
     {
         std::vector<float> square(cube.begin(), cube.begin() + 12);
         addSquare(square, vertices);
@@ -88,7 +89,7 @@ void subdivide(uint8_t rank, const std::vector<float>& cube, std::vector<float> 
         downLeftCornerZ = cube[8] + glm::abs(cube[8] - cube[20]) * (float) i / 3.0f;
 
         float downRightCornerX, downRightCornerY, downRightCornerZ;
-        downRightCornerX = cube[9] + glm::abs(cube[9] -cube[21]) * (float) i / 3.0f;
+        downRightCornerX = cube[9] + glm::abs(cube[9] - cube[21]) * (float) i / 3.0f;
         downRightCornerY = cube[10] + glm::abs(cube[10] - cube[22]) * (float) i / 3.0f;
         downRightCornerZ = cube[11] + glm::abs(cube[11] - cube[23]) * (float) i / 3.0f;
 
@@ -113,125 +114,148 @@ void subdivide(uint8_t rank, const std::vector<float>& cube, std::vector<float> 
         addSquare(square, vertices);
     }
 
-    indices = {0,3,4,
-                                4,3,7,
-                                4,5,8,
-                                8,5,9,
-                                6,7,10,
-                                10,7,11,
-                                8,11,12,
-                                12,11,15,
+    indices = {0, 3, 4,
+               4, 3, 7,
+               4, 5, 8,
+               8, 5, 9,
+               6, 7, 10,
+               10, 7, 11,
+               8, 11, 12,
+               12, 11, 15,
 
-                                48,51,32,
-                                32,51,35,
-                                32,33,16,
-                                16,33,17,
-                                34,35,18,
-                                18,35,19,
-                                16,19,0,
-                                0,19,3,
+               48, 51, 32,
+               32, 51, 35,
+               32, 33, 16,
+               16, 33, 17,
+               34, 35, 18,
+               18, 35, 19,
+               16, 19, 0,
+               0, 19, 3,
 
-                                3,51,7,
-                                7,51,55,
-                                7,23,11,
-                                11,23,27,
-                                39,55,43,
-                                43,55,59,
-                                11,59,15,
-                                15,59,63,
+               3, 51, 7,
+               7, 51, 55,
+               7, 23, 11,
+               11, 23, 27,
+               39, 55, 43,
+               43, 55, 59,
+               11, 59, 15,
+               15, 59, 63,
 
-                                12,15,28,
-                                28,15,31,
-                                28,29,44,
-                                44,29,45,
-                                30,31,46,
-                                46,31,47,
-                                44,47,60,
-                                60,47,63,
+               12, 15, 28,
+               28, 15, 31,
+               28, 29, 44,
+               44, 29, 45,
+               30, 31, 46,
+               46, 31, 47,
+               44, 47, 60,
+               60, 47, 63,
 
-                                48,0,52,
-                                52,0,4,
-                                52,36,56,
-                                56,36,40,
-                                20,4,24,
-                                24,4,8,
-                                56,8,60,
-                                60,8,12,
+               48, 0, 52,
+               52, 0, 4,
+               52, 36, 56,
+               56, 36, 40,
+               20, 4, 24,
+               24, 4, 8,
+               56, 8, 60,
+               60, 8, 12,
 
-                                60,63,56,
-                                56,63,59,
-                                56,57,52,
-                                52,57,53,
-                                58,59,54,
-                                54,59,55,
-                                52,55,48,
-                                48,55,51,
+               60, 63, 56,
+               56, 63, 59,
+               56, 57, 52,
+               52, 57, 53,
+               58, 59, 54,
+               54, 59, 55,
+               52, 55, 48,
+               48, 55, 51,
 
-                                5,21,9,
-                                9,21,25,
-                                9,25,10,
-                                10,25,26,
-                                10,26,6,
-                                6,26,22,
-                                6,22,5,
-                                5,22,21,
+               5, 21, 9,
+               9, 21, 25,
+               9, 25, 10,
+               10, 25, 26,
+               10, 26, 6,
+               6, 26, 22,
+               6, 22, 5,
+               5, 22, 21,
 
-                                23,22,27,
-                                27,22,26,
-                                27,26,43,
-                                43,26,42,
-                                43,42,39,
-                                39,42,38,
-                                39,38,23,
-                                23,38,22,
+               23, 22, 27,
+               27, 22, 26,
+               27, 26, 43,
+               43, 26, 42,
+               43, 42, 39,
+               39, 42, 38,
+               39, 38, 23,
+               23, 38, 22,
 
-                                29,25,45,
-                                45,25,41,
-                                45,41,46,
-                                46,41,42,
-                                46,42,30,
-                                30,42,26,
-                                30,26,29,
-                                29,26,25,
+               29, 25, 45,
+               45, 25, 41,
+               45, 41, 46,
+               46, 41, 42,
+               46, 42, 30,
+               30, 42, 26,
+               30, 26, 29,
+               29, 26, 25,
 
-                                57,41,53,
-                                53,41,37,
-                                53,37,54,
-                                54,37,42,
-                                54,42,58,
-                                58,42,42,
-                                58,42,57,
-                                57,42,41,
+               57, 41, 53,
+               53, 41, 37,
+               53, 37, 54,
+               54, 37, 42,
+               54, 42, 58,
+               58, 42, 42,
+               58, 42, 57,
+               57, 42, 41,
 
-                                36,37,40,
-                                40,37,41,
-                                40,41,24,
-                                24,41,25,
-                                24,25,20,
-                                20,25,21,
-                                20,21,36,
-                                36,21,37,
+               36, 37, 40,
+               40, 37, 41,
+               40, 41, 24,
+               24, 41, 25,
+               24, 25, 20,
+               20, 25, 21,
+               20, 21, 36,
+               36, 21, 37,
 
-                                33,37,17,
-                                17,37,21,
-                                17,21,18,
-                                18,21,22,
-                                18,22,34,
-                                34,22,38,
-                                34,38,33,
-                                33,38,37,
+               33, 37, 17,
+               17, 37, 21,
+               17, 21, 18,
+               18, 21, 22,
+               18, 22, 34,
+               34, 22, 38,
+               34, 38, 33,
+               33, 38, 37,
     };
+
+    normals.resize(vertices.size());
+    for (unsigned int i = 0; i < indices.size(); i += 6) {
+        unsigned int i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2], i3 = indices[i + 5];
+        glm::vec3 a(vertices[3 * i0], vertices[3 * i0 + 1], vertices[3 * i0 + 2]);
+        glm::vec3 b(vertices[3 * i1], vertices[3 * i1 + 1], vertices[3 * i1 + 2]);
+        glm::vec3 c(vertices[3 * i2], vertices[3 * i2 + 1], vertices[3 * i2 + 2]);
+        glm::vec3 U = b - a, V = c - a;
+        glm::vec3 normal = {U.y * V.z - U.z * V.y, U.z * V.x - U.x * V.z, U.x * V.y - U.y * V.x};
+
+        normals[3 * i0] = normal.x;
+        normals[3 * i0 + 1] = normal.y;
+        normals[3 * i0 + 2] = normal.z;
+        normals[3 * i1] = normal.x;
+        normals[3 * i1 + 1] = normal.y;
+        normals[3 * i1 + 2] = normal.z;
+        normals[3 * i2] = normal.x;
+        normals[3 * i2 + 1] = normal.y;
+        normals[3 * i2 + 2] = normal.z;
+        normals[3 * i3] = normal.x;
+        normals[3 * i3 + 1] = normal.y;
+        normals[3 * i3 + 2] = normal.z;
+    }
 }
 
-static uint64_t getNumberOfCubes(int8_t rank){
-    if (rank == - 1){
+static uint64_t getNumberOfCubes(int8_t rank) {
+    if (rank == -1) {
         return 0;
     } else {
         return pow(20, rank);
     }
 }
 
-static uint64_t getNumberOfVertices(uint8_t rank){
+static uint64_t getNumberOfVertices(uint8_t rank) {
     return getNumberOfCubes(rank) * 32 + 8;
 }
 
