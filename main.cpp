@@ -69,11 +69,11 @@ int main() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquation(GL_FUNC_ADD);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    // glEnable(GL_DEPTH_TEST);
+    // glDepthFunc(GL_LESS);
 
-    glEnable(GL_CULL_FACE);
-    glFrontFace(GL_CCW);
+    // glEnable(GL_CULL_FACE);
+    // glCullFace(GL_CCW);
 
     glEnable(GL_MULTISAMPLE);
 
@@ -84,13 +84,12 @@ int main() {
     initProgram(program, "../vShader.glsl", "../fShader.glsl");
     glUseProgram(program);
 
-    vector<float> cubeVertices = {
-            0.0f, 0.0f, 0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+    vector<float> cubePoints = {
+            0.0f, 0.0f, 0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,
     };
-    vector<float> spongeVertices; vector<unsigned int> spongeIndices;
-    subdivide(0, cubeVertices, spongeVertices, spongeIndices);
-    vector<float> cubeNormals = computeTriangleNormalsFromQuads(spongeVertices);
+    vector<float> spongeCubeVertices; vector<unsigned int> spongeCubeIndices; vector<float> spongeCubeNormals;
+    subdivide(0, cubePoints, spongeCubeVertices, spongeCubeIndices, spongeCubeNormals);
 
     vector<float> trapezeVertices = {
             0.75f, 0.75f, 0.25f,  0.75f, 0.25f, 0.25f,  1.00f, 0.00f, 0.00f,  1.00f, 1.00f, 0.00f, // (right)
@@ -112,17 +111,17 @@ int main() {
     glBindVertexArray(VAO[0]);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, spongeVertices.size() * sizeof(float), spongeVertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, spongeCubeVertices.size() * sizeof(float), spongeCubeVertices.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (GLvoid*) nullptr);
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, NBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, cubeNormals.size() * sizeof(float), cubeNormals.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, spongeCubeNormals.size() * sizeof(float), spongeCubeNormals.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (GLvoid*) nullptr);
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, spongeIndices.size() * sizeof(float), spongeIndices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, spongeCubeIndices.size() * sizeof(float), spongeCubeIndices.data(), GL_STATIC_DRAW);
 
     glBindVertexArray(VAO[1]);
 
@@ -152,9 +151,9 @@ int main() {
         glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
         glBindVertexArray(VAO[1]);
-        glDisable(GL_DEPTH_TEST);
+        // glDisable(GL_DEPTH_TEST);
 
-        glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec4(0.5f, 0.5f, 0.5f, 0.7f)));
+        /*glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec4(0.5f, 0.5f, 0.5f, 0.7f)));
         for (unsigned int i = 0; i < 4; ++i) {
             model = glm::rotate(glm::mat4(1.0f), (float) i * glm::pi<float>() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f)) *
                     glm::translate(glm::mat4(1), glm::vec3(-0.5));
@@ -166,20 +165,19 @@ int main() {
                     glm::translate(glm::mat4(1), glm::vec3(-0.5));
             glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(model));
             glDrawElements(GL_TRIANGLES, triangleIndices.size(), GL_UNSIGNED_INT, nullptr);
-        }
+        }*/
 
         glBindVertexArray(VAO[0]);
-        glEnable(GL_DEPTH_TEST);
 
         glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)));
         model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)) * glm::translate(glm::mat4(1), glm::vec3(-0.5));
         glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glDrawElements(GL_TRIANGLES, spongeIndices.size(), GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, spongeCubeIndices.size(), GL_UNSIGNED_INT, nullptr);
 
-        glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec4(0.0f, 1.0f, 0.0f, 0.1f)));
-        model = glm::translate(glm::mat4(1), glm::vec3(-0.5));
-        glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glDrawElements(GL_TRIANGLES, spongeIndices.size(), GL_UNSIGNED_INT, nullptr);
+        // glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec4(0.0f, 1.0f, 0.0f, 0.1f)));
+        // model = glm::translate(glm::mat4(1), glm::vec3(-0.5));
+        // glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        // glDrawElements(GL_TRIANGLES, spongeCubeIndices.size(), GL_UNSIGNED_INT, nullptr);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
