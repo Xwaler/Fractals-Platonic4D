@@ -7,7 +7,7 @@
 
 using namespace std;
 
-vector<float> computeQuadNormals(const vector<float> &vertices) {
+vector<float> computeTriangleNormalsFromQuads(const vector<float> &vertices) {
     vector<float> normals;
     for (unsigned int i = 0; i < vertices.size(); i += 12) {
         glm::vec3 a(vertices[i], vertices[i + 1], vertices[i + 2]);
@@ -24,7 +24,7 @@ vector<float> computeQuadNormals(const vector<float> &vertices) {
     return normals;
 }
 
-vector<unsigned int> computeQuadIndices(int nVertices) {
+vector<unsigned int> computeTriangleIndicesFromQuads(int nVertices) {
     vector<unsigned int> indices;
     for (unsigned int i = 0; i < nVertices; i += 4) {
         indices.push_back(i);
