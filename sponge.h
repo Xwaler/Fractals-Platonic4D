@@ -65,8 +65,7 @@ static void addSquare(const std::vector<float> &square, std::vector<float> &resu
  * adjacent to the first vertex of the first face and so one)
  * @return the array of vertices describing the Mender Sponge demanded
  */
-void subdivide(uint8_t rank, const std::vector<float> &cube, std::vector<float> &vertices,
-               std::vector<unsigned int> &indices, std::vector<float> &normals) {
+void subdivide(uint8_t rank, const std::vector<float> &cube, std::vector<float> &vertices, std::vector<unsigned int> &indices) {
     {
         std::vector<float> square(cube.begin(), cube.begin() + 12);
         addSquare(square, vertices);
@@ -222,28 +221,34 @@ void subdivide(uint8_t rank, const std::vector<float> &cube, std::vector<float> 
                34, 38, 33,
                33, 38, 37,
     };
+}
 
+void getSpongeNormals(const std::vector<float> &vertices, const std::vector<unsigned int> &indices, std::vector<float> &normals) {
     normals.resize(vertices.size());
     for (unsigned int i = 0; i < indices.size(); i += 6) {
-        unsigned int i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2], i3 = indices[i + 5];
-        glm::vec3 a(vertices[3 * i0], vertices[3 * i0 + 1], vertices[3 * i0 + 2]);
-        glm::vec3 b(vertices[3 * i1], vertices[3 * i1 + 1], vertices[3 * i1 + 2]);
-        glm::vec3 c(vertices[3 * i2], vertices[3 * i2 + 1], vertices[3 * i2 + 2]);
+        glm::vec3 a(
+                vertices[3 * indices[i]],
+                vertices[3 * indices[i] + 1],
+                vertices[3 * indices[i] + 2]
+        );
+        glm::vec3 b(
+                vertices[3 * indices[i + 1]],
+                vertices[3 * indices[i + 1] + 1],
+                vertices[3 * indices[i + 1] + 2]
+        );
+        glm::vec3 c(
+                vertices[3 * indices[i + 5]],
+                vertices[3 * indices[i + 5] + 1],
+                vertices[3 * indices[i + 5] + 2]
+        );
         glm::vec3 U = b - a, V = c - a;
         glm::vec3 normal = {U.y * V.z - U.z * V.y, U.z * V.x - U.x * V.z, U.x * V.y - U.y * V.x};
 
-        normals[3 * i0] = normal.x;
-        normals[3 * i0 + 1] = normal.y;
-        normals[3 * i0 + 2] = normal.z;
-        normals[3 * i1] = normal.x;
-        normals[3 * i1 + 1] = normal.y;
-        normals[3 * i1 + 2] = normal.z;
-        normals[3 * i2] = normal.x;
-        normals[3 * i2 + 1] = normal.y;
-        normals[3 * i2 + 2] = normal.z;
-        normals[3 * i3] = normal.x;
-        normals[3 * i3 + 1] = normal.y;
-        normals[3 * i3 + 2] = normal.z;
+        for (unsigned int j = 0; j < 6; ++j) {
+            normals[3 * indices[i + j]] = normal.x;
+            normals[3 * indices[i + j] + 1] = normal.y;
+            normals[3 * indices[i + j] + 2] = normal.z;
+        }
     }
 }
 
