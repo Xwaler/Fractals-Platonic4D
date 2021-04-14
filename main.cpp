@@ -90,7 +90,9 @@ int main() {
     };
     vector<float> spongeCubeVertices; vector<unsigned int> spongeCubeIndices; vector<float> spongeCubeNormals;
     subdivide(0, cubePoints, spongeCubeVertices, spongeCubeIndices);
+    duplicateVertices(spongeCubeVertices, spongeCubeIndices);
     getSpongeNormals(spongeCubeVertices, spongeCubeIndices, spongeCubeNormals);
+    cout << spongeCubeVertices.size() << " vertices, " << spongeCubeNormals.size() << " normals, " << spongeCubeIndices.size() << " indices" << endl;
 
     vector<float> trapezeVertices = {
             0.75f, 0.75f, 0.25f,  0.75f, 0.25f, 0.25f,  1.00f, 0.00f, 0.00f,  1.00f, 1.00f, 0.00f, // (right)
@@ -151,7 +153,7 @@ int main() {
         glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-        glBindVertexArray(VAO[1]);
+        /*glBindVertexArray(VAO[1]);
         glDisable(GL_DEPTH_TEST);
 
         glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec4(0.5f, 0.5f, 0.5f, 0.7f)));
@@ -166,7 +168,7 @@ int main() {
                     glm::translate(glm::mat4(1), glm::vec3(-0.5));
             glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(model));
             glDrawElements(GL_TRIANGLES, triangleIndices.size(), GL_UNSIGNED_INT, nullptr);
-        }
+        }*/
 
         glBindVertexArray(VAO[0]);
         glEnable(GL_DEPTH_TEST);

@@ -92,19 +92,12 @@ void subdivide(uint8_t rank, const std::vector<float> &cube, std::vector<float> 
         downRightCornerY = cube[10] + glm::abs(cube[10] - cube[22]) * (float) i / 3.0f;
         downRightCornerZ = cube[11] + glm::abs(cube[11] - cube[23]) * (float) i / 3.0f;
 
-        std::vector<float> square;
-        square.push_back(upLeftCornerX);
-        square.push_back(upLeftCornerY);
-        square.push_back(upLeftCornerZ);
-        square.push_back(upRightCornerX);
-        square.push_back(upRightCornerY);
-        square.push_back(upRightCornerZ);
-        square.push_back(downLeftCornerX);
-        square.push_back(downLeftCornerY);
-        square.push_back(downLeftCornerZ);
-        square.push_back(downRightCornerX);
-        square.push_back(downRightCornerY);
-        square.push_back(downRightCornerZ);
+        std::vector<float> square = {
+                upLeftCornerX, upLeftCornerY, upLeftCornerZ,
+                upRightCornerX, upRightCornerY, upRightCornerZ,
+                downLeftCornerX, downLeftCornerY, downLeftCornerZ,
+                downRightCornerX, downRightCornerY, downRightCornerZ,
+        };
         addSquare(square, vertices);
     }
 
@@ -197,9 +190,9 @@ void subdivide(uint8_t rank, const std::vector<float> &cube, std::vector<float> 
                57, 41, 53,
                53, 41, 37,
                53, 37, 54,
-               54, 37, 42,
-               54, 42, 58,
-               58, 42, 42,
+               54, 37, 38,
+               54, 38, 58,
+               58, 38, 42,
                58, 42, 57,
                57, 42, 41,
 
@@ -237,9 +230,9 @@ void getSpongeNormals(const std::vector<float> &vertices, const std::vector<unsi
                 vertices[3 * indices[i + 1] + 2]
         );
         glm::vec3 c(
-                vertices[3 * indices[i + 5]],
-                vertices[3 * indices[i + 5] + 1],
-                vertices[3 * indices[i + 5] + 2]
+                vertices[3 * indices[i + 2]],
+                vertices[3 * indices[i + 2] + 1],
+                vertices[3 * indices[i + 2] + 2]
         );
         glm::vec3 U = b - a, V = c - a;
         glm::vec3 normal = {U.y * V.z - U.z * V.y, U.z * V.x - U.x * V.z, U.x * V.y - U.y * V.x};

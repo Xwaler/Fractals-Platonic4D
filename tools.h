@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 
 #include <vector>
+#include <map>
+#include <algorithm>
 
 using namespace std;
 
@@ -35,6 +37,24 @@ vector<unsigned int> computeTriangleIndicesFromQuads(int nVertices) {
         indices.push_back(i);
     }
     return indices;
+}
+
+void duplicateVertices(vector<float> &vertices, vector<unsigned int> &indices) {
+    vector<float> newVertices;
+    unsigned int maxIndex = *max_element(indices.begin(), indices.end());
+
+    map<unsigned int, unsigned int> count;
+    for (unsigned int &index: indices) {
+        if (count.find(index) == count.end()) count[index] = 1;
+        else {
+            ++count[index];
+            newVertices.push_back(vertices[3 * index]);
+            newVertices.push_back(vertices[3 * index + 1]);
+            newVertices.push_back(vertices[3 * index + 2]);
+            index = ++maxIndex;
+        }
+    }
+    vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
 }
 
 #endif //FRACTALS_PLATONIC4D_TOOLS_H
