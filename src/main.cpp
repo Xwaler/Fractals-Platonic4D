@@ -79,9 +79,10 @@ int main(int argc, char* argv[]) {
     };
     vector<float> spongeCubeVertices; vector<uint32_t> spongeCubeIndices; vector<float> spongeCubeNormals;
     // generate Menger's Sponge vertices and indices
-    subdivide(0, cubePoints, spongeCubeVertices, spongeCubeIndices);
+    subdivide(1, cubePoints, spongeCubeVertices, spongeCubeIndices);
     // duplicate vertices used by many "sides" to allow calculation of independent vertices normals
-    duplicateVertices(spongeCubeVertices, spongeCubeIndices);
+    std::cout << ":(" << std::endl;
+    //duplicateVertices(spongeCubeVertices, spongeCubeIndices);
     // compute said normals
     getSpongeNormals(spongeCubeVertices, spongeCubeIndices, spongeCubeNormals);
 
@@ -116,12 +117,11 @@ int main(int argc, char* argv[]) {
     };
     vector<float> spongeTrapezeVertices; vector<uint32_t> spongeTrapezeIndices; vector<float> spongeTrapezeNormals;
     // generate menger vertices and indices
-    subdivide(0, trapezePoints, spongeTrapezeVertices, spongeTrapezeIndices);
+    subdivide(1, trapezePoints, spongeTrapezeVertices, spongeTrapezeIndices);
     // duplicate vertices used by many "sides" to allow calculation of independent vertices normals
     duplicateVertices(spongeTrapezeVertices, spongeTrapezeIndices);
     // compute said normals
     getSpongeNormals(spongeTrapezeVertices, spongeTrapezeIndices, spongeTrapezeNormals);
-
     // bind the second vertex array reserved for the trapeze vertices
     glBindVertexArray(VAO[1]);
     // bind vertex buffer 1 to vertex array 1
