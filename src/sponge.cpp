@@ -1,9 +1,4 @@
-#include <cstdint>
-#include <cmath>
-#include <glm/glm.hpp>
-#include <vector>
 #include <iostream>
-
 #include "../headers/sponge.h"
 
 std::vector<uint8_t> frontFaceIndices = { 0,  3,  4,
@@ -356,7 +351,7 @@ void subdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float>
 
 }
 
-void getSpongeNormals(const vector<float> &vertices, const vector<uint32_t> &indices, vector<float> &normals) {
+void computeSpongeNormals(const vector<float> &vertices, const vector<uint32_t> &indices, vector<float> &normals) {
     normals.resize(vertices.size());
     for (uint32_t i = 0; i < indices.size(); i += 6) {
         glm::vec3 a(
@@ -395,4 +390,22 @@ static uint64_t getNumberOfCubes(int8_t depth) {
 
 static uint64_t getNumberOfVertices(uint8_t depth) {
     return getNumberOfCubes(depth) * 32 + 8;
+}
+
+void duplicateVertices(vector<float> &vertices, vector<uint32_t> &indices) {
+    vector<float> newVertices;
+    unsigned int maxIndex = *max_element(indices.begin(), indices.end());
+
+    map<uint32_t, uint8_t> count;
+    for (uint32_t &index: indices) {
+        if (count.find(index) == count.end()) count[index] = 1;
+        else {
+            ++count[index];
+            newVertices.push_back(vertices[3 * index]);
+            newVertices.push_back(vertices[3 * index + 1]);
+            newVertices.push_back(vertices[3 * index + 2]);
+            index = ++maxIndex;
+        }
+    }
+    vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
 }
