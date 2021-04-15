@@ -1,10 +1,3 @@
-#include <glad/glad.h>
-#include <glm/glm.hpp>
-
-#include <vector>
-#include <map>
-#include <algorithm>
-
 #include "../headers/tools.h"
 
 using namespace std;
@@ -37,42 +30,4 @@ vector<unsigned int> computeTriangleIndicesFromQuads(int nVertices) {
         indices.push_back(i);
     }
     return indices;
-}
-
-void duplicateVertices(vector<float> &vertices, vector<uint32_t> &indices) {
-    vector<float> newVertices;
-    unsigned int maxIndex = *max_element(indices.begin(), indices.end());
-
-    map<uint32_t, uint8_t> count;
-    for (uint32_t &index: indices) {
-        if (count.find(index) == count.end()) count[index] = 1;
-        else {
-            ++count[index];
-            newVertices.push_back(vertices[3 * index]);
-            newVertices.push_back(vertices[3 * index + 1]);
-            newVertices.push_back(vertices[3 * index + 2]);
-            index = ++maxIndex;
-        }
-    }
-    vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
-}
-
-void enableBlending() {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendEquation(GL_FUNC_ADD);
-}
-
-void enableDepthTest() {
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-}
-
-void disableDepthTest() {
-    glDisable(GL_DEPTH_TEST);
-}
-
-void enableFaceCulling() {
-    glDisable(GL_CULL_FACE);
-    glCullFace(GL_CCW);
 }

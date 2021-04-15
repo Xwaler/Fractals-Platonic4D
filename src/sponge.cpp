@@ -1,8 +1,3 @@
-#include <cstdint>
-#include <cmath>
-#include <glm/glm.hpp>
-#include <vector>
-
 #include "../headers/sponge.h"
 
 using namespace std;
@@ -136,7 +131,7 @@ static void subdivideParallelepiped(const vector<float> &parallelepiped, vector<
  *        first face, then opposite face (each face is given in a Z like pattern, e.g : top left, top right,
  *        bottom left, bottom right).
  *        The second face must be given in the same order as the first one (e.g : if the first point given for the first
- *        face was the top left one, the second face must start with the top left one adn so on.)
+ *        face was the top left one, the second face must start with the top left one and so on.)
  * @param vertices is an empty vector where the subdivision will be written to
  * @param indices is an empty vector where the indices describing the faces will be written to
  */
@@ -255,7 +250,7 @@ void subdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float>
     };
 }
 
-void getSpongeNormals(const vector<float> &vertices, const vector<uint32_t> &indices, vector<float> &normals) {
+void computeSpongeNormals(const vector<float> &vertices, const vector<uint32_t> &indices, vector<float> &normals) {
     normals.resize(vertices.size());
     for (uint32_t i = 0; i < indices.size(); i += 6) {
         glm::vec3 a(
@@ -294,4 +289,22 @@ static uint64_t getNumberOfCubes(int8_t depth) {
 
 static uint64_t getNumberOfVertices(uint8_t depth) {
     return getNumberOfCubes(depth) * 32 + 8;
+}
+
+void duplicateVertices(vector<float> &vertices, vector<uint32_t> &indices) {
+    vector<float> newVertices;
+    unsigned int maxIndex = *max_element(indices.begin(), indices.end());
+
+    map<uint32_t, uint8_t> count;
+    for (uint32_t &index: indices) {
+        if (count.find(index) == count.end()) count[index] = 1;
+        else {
+            ++count[index];
+            newVertices.push_back(vertices[3 * index]);
+            newVertices.push_back(vertices[3 * index + 1]);
+            newVertices.push_back(vertices[3 * index + 2]);
+            index = ++maxIndex;
+        }
+    }
+    vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
 }
