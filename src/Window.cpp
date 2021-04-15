@@ -43,7 +43,6 @@ void Window::initOpenGL() {
     
     /* Enable some opengl capacities */
     enableBlending();
-    enableFaceCulling();
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_LINE_SMOOTH);
     glLineWidth(4);
