@@ -39,13 +39,13 @@ void checkCompileErrors(unsigned int shader, const std::string& type) {
     }
 }
 
-void createShader(unsigned int ID, const char* &code, const char* type) {
+void createShader(uint32_t ID, const char* &code, const char* type) {
     glShaderSource(ID, 1, &code, nullptr);
     glCompileShader(ID);
     checkCompileErrors(ID, type);
 }
 
-void initProgram(unsigned int ID, const char* vShader, const char* fShader) {
+void initProgram(uint32_t ID, const char* vShader, const char* fShader) {
     std::string vertexCode = readShaderFile(vShader);
     const char* vShaderCode = vertexCode.c_str();
 

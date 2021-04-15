@@ -19,14 +19,14 @@ static void subdivideLine(const vector<float> &line, vector<float> &result) {
     result.push_back(line[2]);
 
     /* Add a point one third of the way between the two points that describe the line */
-    result.push_back(line[0] -(line[0] - line[3]) / 3.0f);
-    result.push_back(line[1] -(line[1] - line[4]) / 3.0f);
-    result.push_back(line[2] -(line[2] - line[5]) / 3.0f);
+    result.push_back(line[0] - (line[0] - line[3]) / 3.0f);
+    result.push_back(line[1] - (line[1] - line[4]) / 3.0f);
+    result.push_back(line[2] - (line[2] - line[5]) / 3.0f);
 
     /* Add a point two thirds of the way between the two points that describe the line */
-    result.push_back(line[0] -(line[0] - line[3]) * 2.0f / 3.0f);
-    result.push_back(line[1] -(line[1] - line[4]) * 2.0f / 3.0f);
-    result.push_back(line[2] -(line[2] - line[5]) * 2.0f / 3.0f);
+    result.push_back(line[0] - (line[0] - line[3]) * 2.0f / 3.0f);
+    result.push_back(line[1] - (line[1] - line[4]) * 2.0f / 3.0f);
+    result.push_back(line[2] - (line[2] - line[5]) * 2.0f / 3.0f);
 
     /* Add the end of the line to the result vector */
     result.push_back(line[3]);
@@ -50,14 +50,14 @@ static void subdivideQuadrilateral(const vector<float> &quadrilateral, vector<fl
      * Those lines are parallels and equidistant */
     for (uint8_t i = 1; i < 3; ++i) {
         float startOfLineX, startOfLineY, startOfLineZ;
-        startOfLineX = quadrilateral[0] -(quadrilateral[0] - quadrilateral[6]) * (float) i / 3.0f;
-        startOfLineY = quadrilateral[1] -(quadrilateral[1] - quadrilateral[7]) * (float) i / 3.0f;
-        startOfLineZ = quadrilateral[2] -(quadrilateral[2] - quadrilateral[8]) * (float) i / 3.0f;
+        startOfLineX = quadrilateral[0] - (quadrilateral[0] - quadrilateral[6]) * (float) i / 3.0f;
+        startOfLineY = quadrilateral[1] - (quadrilateral[1] - quadrilateral[7]) * (float) i / 3.0f;
+        startOfLineZ = quadrilateral[2] - (quadrilateral[2] - quadrilateral[8]) * (float) i / 3.0f;
 
         float endOfLineX, endOfLineY, endOfLineZ;
-        endOfLineX = quadrilateral[3] -(quadrilateral[3] - quadrilateral[9]) * (float) i / 3.0f;
-        endOfLineY = quadrilateral[4] -(quadrilateral[4] - quadrilateral[10]) * (float) i / 3.0f;
-        endOfLineZ = quadrilateral[5] -(quadrilateral[5] - quadrilateral[11]) * (float) i / 3.0f;
+        endOfLineX = quadrilateral[3] - (quadrilateral[3] - quadrilateral[9]) * (float) i / 3.0f;
+        endOfLineY = quadrilateral[4] - (quadrilateral[4] - quadrilateral[10]) * (float) i / 3.0f;
+        endOfLineZ = quadrilateral[5] - (quadrilateral[5] - quadrilateral[11]) * (float) i / 3.0f;
 
         vector<float> line = {
                 startOfLineX, startOfLineY, startOfLineZ,
@@ -93,24 +93,24 @@ static void subdivideParallelepiped(const vector<float> &parallelepiped, vector<
     * Those quadrilateral are parallels and equidistant */
     for (uint8_t i = 1; i < 3; ++i) {
         float upLeftCornerX, upLeftCornerY, upLeftCornerZ;
-        upLeftCornerX = parallelepiped[0] -(parallelepiped[0] - parallelepiped[12]) * (float) i / 3.0f;
-        upLeftCornerY = parallelepiped[1] -(parallelepiped[1] - parallelepiped[13]) * (float) i / 3.0f;
-        upLeftCornerZ = parallelepiped[2] -(parallelepiped[2] - parallelepiped[14]) * (float) i / 3.0f;
+        upLeftCornerX = parallelepiped[0] - (parallelepiped[0] - parallelepiped[12]) * (float) i / 3.0f;
+        upLeftCornerY = parallelepiped[1] - (parallelepiped[1] - parallelepiped[13]) * (float) i / 3.0f;
+        upLeftCornerZ = parallelepiped[2] - (parallelepiped[2] - parallelepiped[14]) * (float) i / 3.0f;
 
         float upRightCornerX, upRightCornerY, upRightCornerZ;
-        upRightCornerX = parallelepiped[3] -(parallelepiped[3] - parallelepiped[15]) * (float) i / 3.0f;
-        upRightCornerY = parallelepiped[4] -(parallelepiped[4] - parallelepiped[16]) * (float) i / 3.0f;
-        upRightCornerZ = parallelepiped[5] -(parallelepiped[5] - parallelepiped[17]) * (float) i / 3.0f;
+        upRightCornerX = parallelepiped[3] - (parallelepiped[3] - parallelepiped[15]) * (float) i / 3.0f;
+        upRightCornerY = parallelepiped[4] - (parallelepiped[4] - parallelepiped[16]) * (float) i / 3.0f;
+        upRightCornerZ = parallelepiped[5] - (parallelepiped[5] - parallelepiped[17]) * (float) i / 3.0f;
 
         float downLeftCornerX, downLeftCornerY, downLeftCornerZ;
-        downLeftCornerX = parallelepiped[6] -(parallelepiped[6] - parallelepiped[18]) * (float) i / 3.0f;
-        downLeftCornerY = parallelepiped[7] -(parallelepiped[7] - parallelepiped[19]) * (float) i / 3.0f;
-        downLeftCornerZ = parallelepiped[8] -(parallelepiped[8] - parallelepiped[20]) * (float) i / 3.0f;
+        downLeftCornerX = parallelepiped[6] - (parallelepiped[6] - parallelepiped[18]) * (float) i / 3.0f;
+        downLeftCornerY = parallelepiped[7] - (parallelepiped[7] - parallelepiped[19]) * (float) i / 3.0f;
+        downLeftCornerZ = parallelepiped[8] - (parallelepiped[8] - parallelepiped[20]) * (float) i / 3.0f;
 
         float downRightCornerX, downRightCornerY, downRightCornerZ;
-        downRightCornerX = parallelepiped[9] -(parallelepiped[9] - parallelepiped[21]) * (float) i / 3.0f;
-        downRightCornerY = parallelepiped[10] -(parallelepiped[10] - parallelepiped[22]) * (float) i / 3.0f;
-        downRightCornerZ = parallelepiped[11] -(parallelepiped[11] - parallelepiped[23]) * (float) i / 3.0f;
+        downRightCornerX = parallelepiped[9] - (parallelepiped[9] - parallelepiped[21]) * (float) i / 3.0f;
+        downRightCornerY = parallelepiped[10] - (parallelepiped[10] - parallelepiped[22]) * (float) i / 3.0f;
+        downRightCornerZ = parallelepiped[11] - (parallelepiped[11] - parallelepiped[23]) * (float) i / 3.0f;
 
         vector<float> quadrilateral = {
                 upLeftCornerX, upLeftCornerY, upLeftCornerZ,
@@ -141,7 +141,7 @@ static void subdivideParallelepiped(const vector<float> &parallelepiped, vector<
  * @param indices is an empty vector where the indices describing the faces will be written to
  */
 void subdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
-               vector<unsigned int> &indices) {
+               vector<uint32_t> &indices) {
 
     subdivideParallelepiped(parallelepiped, vertices);
 
@@ -255,9 +255,9 @@ void subdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float>
     };
 }
 
-void getSpongeNormals(const vector<float> &vertices, const vector<unsigned int> &indices, vector<float> &normals) {
+void getSpongeNormals(const vector<float> &vertices, const vector<uint32_t> &indices, vector<float> &normals) {
     normals.resize(vertices.size());
-    for (unsigned int i = 0; i < indices.size(); i += 6) {
+    for (uint32_t i = 0; i < indices.size(); i += 6) {
         glm::vec3 a(
                 vertices[3 * indices[i]],
                 vertices[3 * indices[i] + 1],
@@ -276,7 +276,7 @@ void getSpongeNormals(const vector<float> &vertices, const vector<unsigned int> 
         glm::vec3 U = b - a, V = c - a;
         glm::vec3 normal = {U.y * V.z - U.z * V.y, U.z * V.x - U.x * V.z, U.x * V.y - U.y * V.x};
 
-        for (unsigned int j = 0; j < 6; ++j) {
+        for (uint8_t j = 0; j < 6; ++j) {
             normals[3 * indices[i + j]] = normal.x;
             normals[3 * indices[i + j] + 1] = normal.y;
             normals[3 * indices[i + j] + 2] = normal.z;

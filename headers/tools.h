@@ -7,7 +7,7 @@ vector<float> computeTriangleNormalsFromQuads(const vector<float> &vertices);
 
 vector<unsigned int> computeTriangleIndicesFromQuads(int nVertices);
 
-void duplicateVertices(vector<float> &vertices, vector<unsigned int> &indices);
+void duplicateVertices(vector<float> &vertices, vector<uint32_t> &indices);
 
 void enableBlending();
 

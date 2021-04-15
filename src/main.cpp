@@ -52,19 +52,18 @@ int main(int argc, char* argv[]) {
 
     // enable some opengl capacities
     enableBlending();
-    enableDepthTest();
     enableFaceCulling();
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_LINE_SMOOTH);
     glLineWidth(4);
 
     // compile shaders and program
-    unsigned int program = glCreateProgram();
+    uint32_t program = glCreateProgram();
     initProgram(program, "../shaders/vShader.glsl", "../shaders/fShader.glsl");
     glUseProgram(program);
 
     // initialize vertex arrays and buffers
-    unsigned int VAO[2], VBO[2], NBO[2], IBO[2];
+    uint32_t VAO[2], VBO[2], NBO[2], IBO[2];
     glGenVertexArrays(2, VAO);
     glGenBuffers(2, VBO);
     glGenBuffers(2, NBO);
@@ -78,7 +77,7 @@ int main(int argc, char* argv[]) {
             0.0f, 0.0f, 0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f, 0.0f,
             0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,
     };
-    vector<float> spongeCubeVertices; vector<unsigned int> spongeCubeIndices; vector<float> spongeCubeNormals;
+    vector<float> spongeCubeVertices; vector<uint32_t> spongeCubeIndices; vector<float> spongeCubeNormals;
     // generate Menger's Sponge vertices and indices
     subdivide(0, cubePoints, spongeCubeVertices, spongeCubeIndices);
     // duplicate vertices used by many "sides" to allow calculation of independent vertices normals
@@ -105,7 +104,7 @@ int main(int argc, char* argv[]) {
     // bind indices buffer 0 to vertex array 0
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[0]);
     // buffer cube indices to vertex buffer 0
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, spongeCubeIndices.size() * sizeof(float), spongeCubeIndices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, spongeCubeIndices.size() * sizeof(uint32_t), spongeCubeIndices.data(), GL_STATIC_DRAW);
 
 
     /* TRAPEZE VERTICES */
@@ -115,7 +114,7 @@ int main(int argc, char* argv[]) {
             0.00f, 0.00f, 0.00f,  1.00f, 0.00f, 0.00f,  0.00f, 1.00f, 0.00f,  1.00f, 1.00f, 0.00f,
             0.25f, 0.25f, 0.25f,  0.75f, 0.25f, 0.25f,  0.25f, 0.75f, 0.25f,  0.75f, 0.75f, 0.25f,
     };
-    vector<float> spongeTrapezeVertices; vector<unsigned int> spongeTrapezeIndices; vector<float> spongeTrapezeNormals;
+    vector<float> spongeTrapezeVertices; vector<uint32_t> spongeTrapezeIndices; vector<float> spongeTrapezeNormals;
     // generate menger vertices and indices
     subdivide(0, trapezePoints, spongeTrapezeVertices, spongeTrapezeIndices);
     // duplicate vertices used by many "sides" to allow calculation of independent vertices normals
@@ -142,7 +141,7 @@ int main(int argc, char* argv[]) {
     // bind indices buffer 1 to vertex array 1
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[1]);
     // buffer trapeze indices to vertex buffer 1
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, spongeTrapezeIndices.size() * sizeof(float), spongeTrapezeIndices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, spongeTrapezeIndices.size() * sizeof(uint32_t), spongeTrapezeIndices.data(), GL_STATIC_DRAW);
 
 
     /* RENDER LOOP */
@@ -202,7 +201,7 @@ int main(int argc, char* argv[]) {
         // draw vertices and create fragments with triangles
         glDrawElements(GL_TRIANGLES, spongeCubeIndices.size(), GL_UNSIGNED_INT, nullptr);
 
-        // glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec4(0.0f, 1.0f, 0.0f, 0.7f)));
+        // glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec4(0.0f, 1.0f, 0.0f, 0.1f)));
         // model = glm::translate(glm::mat4(1), glm::vec3(-0.5));
         // glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         // glDrawElements(GL_TRIANGLES, spongeCubeIndices.size(), GL_UNSIGNED_INT, nullptr);

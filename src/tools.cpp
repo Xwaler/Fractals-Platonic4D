@@ -39,12 +39,12 @@ vector<unsigned int> computeTriangleIndicesFromQuads(int nVertices) {
     return indices;
 }
 
-void duplicateVertices(vector<float> &vertices, vector<unsigned int> &indices) {
+void duplicateVertices(vector<float> &vertices, vector<uint32_t> &indices) {
     vector<float> newVertices;
     unsigned int maxIndex = *max_element(indices.begin(), indices.end());
 
-    map<unsigned int, unsigned int> count;
-    for (unsigned int &index: indices) {
+    map<uint32_t, uint8_t> count;
+    for (uint32_t &index: indices) {
         if (count.find(index) == count.end()) count[index] = 1;
         else {
             ++count[index];
