@@ -12,7 +12,7 @@ using namespace std;
 
 string readShaderFile(const char* file);
 
-void checkCompileErrors(unsigned int shader, const string& type);
+void checkCompileErrors(uint32_t shader, const string& type);
 
 void createShader(uint32_t ID, const char* &code, const char* type);
 

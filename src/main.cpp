@@ -1,3 +1,4 @@
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -11,8 +12,6 @@ using namespace std;
 
 /**
  * Main function
- * @param argc
- * @param argv
  * @return
  */
 int main() {
@@ -55,30 +54,36 @@ int main() {
 
     /* RENDER LOOP */
     while (window.continueLoop()) {
+        /* Draw the background and clear OpenGL render bits */
         Window::clear();
 
         /* Update the camera position based on mouse movements */
         glm::vec3 cameraPosition = window.updateCamera();
 
-        /* Initialize mvp matrix */
+        /* Initialize view matrix from camera and perspective projection matrix */
         glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0, 1.0f, 0.0f));
         glm::mat4 projection = glm::perspective(glm::pi<float>() / 4.0f, (float) Window::WIDTH / (float) Window::HEIGHT, 0.1f, 100.0f);
         /* Push view and projection matrix to the gpu through uniforms */
         window.loadUniformMat4f("view", view);
         window.loadUniformMat4f("projection", projection);
 
-        // push unique vertices color to the gpu through uniform
+        /* Set and push vertices color to the gpu through uniform */
         glm::vec4 color = glm::vec4(0.5f, 0.5f, 0.5f, 0.7f);
         window.loadUniformVec4f("color", color);
+        /* Draw the scene from the trapeze vertex array */
         window.drawScene(VAO_ID::TRAPEZE);
 
+        /* Set and push vertices color to the gpu through uniform */
         color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
         window.loadUniformVec4f("color", color);
+        /* Draw the scene from the cube vertex array */
         window.drawScene(VAO_ID::CUBE);
 
+        /* Swap the framebuffer to apply changes onto the screen */
         window.blit();
     }
 
+    /* Release buffers and close the window */
     window.close();
     return 0;
 }
