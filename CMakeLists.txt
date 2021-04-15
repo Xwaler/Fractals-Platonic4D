@@ -7,7 +7,8 @@ set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libraries")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/libraries/glfw")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/libraries/glm")
 
-add_executable(${PROJECT_NAME} main.cpp shader.h tools.h sponge.h)
+add_executable(${PROJECT_NAME} src/main.cpp src/shader.cpp src/shader.h
+        src/tools.cpp src/tools.h src/sponge.cpp src/sponge.h src/window.h )
 
 target_link_libraries(${PROJECT_NAME} glfw)
 

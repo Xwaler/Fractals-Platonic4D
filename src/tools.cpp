@@ -1,11 +1,11 @@
-#ifndef FRACTALS_PLATONIC4D_TOOLS_H
-#define FRACTALS_PLATONIC4D_TOOLS_H
-
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 
 #include <vector>
 #include <map>
 #include <algorithm>
+
+#include "tools.h"
 
 using namespace std;
 
@@ -57,4 +57,22 @@ void duplicateVertices(vector<float> &vertices, vector<unsigned int> &indices) {
     vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
 }
 
-#endif //FRACTALS_PLATONIC4D_TOOLS_H
+void enableBlending() {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
+}
+
+void enableDepthTest() {
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+}
+
+void disableDepthTest() {
+    glDisable(GL_DEPTH_TEST);
+}
+
+void enableFaceCulling() {
+    glDisable(GL_CULL_FACE);
+    glCullFace(GL_CCW);
+}

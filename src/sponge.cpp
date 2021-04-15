@@ -1,13 +1,13 @@
-#ifndef FRACTALS_PLATONIC4D_SPONGE_H
-#define FRACTALS_PLATONIC4D_SPONGE_H
-
 #include <cstdint>
 #include <cmath>
 #include <glm/glm.hpp>
 #include <vector>
 
-static void addLine(const std::vector<float> &line, std::vector<float> &result) {
+#include "sponge.h"
 
+using namespace std;
+
+static void addLine(const vector<float> &line, vector<float> &result) {
     result.push_back(line[0]);
     result.push_back(line[1]);
     result.push_back(line[2]);
@@ -25,9 +25,9 @@ static void addLine(const std::vector<float> &line, std::vector<float> &result) 
     result.push_back(line[5]);
 }
 
-static void addSquare(const std::vector<float> &square, std::vector<float> &result) {
+static void addSquare(const vector<float> &square, vector<float> &result) {
     {
-        std::vector<float> line(square.begin(), square.begin() + 6);
+        vector<float> line(square.begin(), square.begin() + 6);
         addLine(line, result);
     }
 
@@ -42,18 +42,15 @@ static void addSquare(const std::vector<float> &square, std::vector<float> &resu
         endOfLineY = square[4] + glm::abs(square[4] - square[10]) * (float) i / 3.0f;
         endOfLineZ = square[5] + glm::abs(square[5] - square[11]) * (float) i / 3.0f;
 
-        std::vector<float> line;
-        line.push_back(startOfLineX);
-        line.push_back(startOfLineY);
-        line.push_back(startOfLineZ);
-        line.push_back(endOfLineX);
-        line.push_back(endOfLineY);
-        line.push_back(endOfLineZ);
+        vector<float> line = {
+                startOfLineX, startOfLineY, startOfLineZ,
+                endOfLineX, endOfLineY, endOfLineZ,
+        };
         addLine(line, result);
     }
 
     {
-        std::vector<float> line(square.begin() + 6, square.begin() + 12);
+        vector<float> line(square.begin() + 6, square.begin() + 12);
         addLine(line, result);
     }
 }
@@ -65,9 +62,9 @@ static void addSquare(const std::vector<float> &square, std::vector<float> &resu
  * adjacent to the first vertex of the first face and so one)
  * @return the array of vertices describing the Mender Sponge demanded
  */
-void subdivide(uint8_t rank, const std::vector<float> &cube, std::vector<float> &vertices, std::vector<unsigned int> &indices) {
+void subdivide(uint8_t rank, const vector<float> &cube, vector<float> &vertices, vector<unsigned int> &indices) {
     {
-        std::vector<float> square(cube.begin(), cube.begin() + 12);
+        vector<float> square(cube.begin(), cube.begin() + 12);
         addSquare(square, vertices);
     }
 
@@ -92,7 +89,7 @@ void subdivide(uint8_t rank, const std::vector<float> &cube, std::vector<float> 
         downRightCornerY = cube[10] + glm::abs(cube[10] - cube[22]) * (float) i / 3.0f;
         downRightCornerZ = cube[11] + glm::abs(cube[11] - cube[23]) * (float) i / 3.0f;
 
-        std::vector<float> square = {
+        vector<float> square = {
                 upLeftCornerX, upLeftCornerY, upLeftCornerZ,
                 upRightCornerX, upRightCornerY, upRightCornerZ,
                 downLeftCornerX, downLeftCornerY, downLeftCornerZ,
@@ -102,7 +99,7 @@ void subdivide(uint8_t rank, const std::vector<float> &cube, std::vector<float> 
     }
 
     {
-        std::vector<float> square(cube.begin() + 12, cube.begin() + 24);
+        vector<float> square(cube.begin() + 12, cube.begin() + 24);
         addSquare(square, vertices);
     }
 
@@ -216,7 +213,7 @@ void subdivide(uint8_t rank, const std::vector<float> &cube, std::vector<float> 
     };
 }
 
-void getSpongeNormals(const std::vector<float> &vertices, const std::vector<unsigned int> &indices, std::vector<float> &normals) {
+void getSpongeNormals(const vector<float> &vertices, const vector<unsigned int> &indices, vector<float> &normals) {
     normals.resize(vertices.size());
     for (unsigned int i = 0; i < indices.size(); i += 6) {
         glm::vec3 a(
@@ -256,5 +253,3 @@ static uint64_t getNumberOfCubes(int8_t rank) {
 static uint64_t getNumberOfVertices(uint8_t rank) {
     return getNumberOfCubes(rank) * 32 + 8;
 }
-
-#endif //FRACTALS_PLATONIC4D_SPONGE_H
