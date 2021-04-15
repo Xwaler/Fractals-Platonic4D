@@ -8,10 +8,10 @@
 #include <iostream>
 #include <vector>
 
-#include "window.h"
-#include "shader.h"
-#include "sponge.h"
-#include "tools.h"
+#include "../headers/window.h"
+#include "../headers/shader.h"
+#include "../headers/sponge.h"
+#include "../headers/tools.h"
 
 using namespace std;
 
@@ -24,7 +24,7 @@ using namespace std;
 int main(int argc, char* argv[]) {
     /* OPENGL INITIALIZATION */
 
-    // Initialize glfw and its base parameters
+    /* Initialize glfw library and its base parameters */
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
             0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,
     };
     vector<float> spongeCubeVertices; vector<unsigned int> spongeCubeIndices; vector<float> spongeCubeNormals;
-    // generate menger vertices and indices
+    // generate Menger's Sponge vertices and indices
     subdivide(0, cubePoints, spongeCubeVertices, spongeCubeIndices);
     // duplicate vertices used by many "sides" to allow calculation of independent vertices normals
     duplicateVertices(spongeCubeVertices, spongeCubeIndices);
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
         // push unique vertices color to the gpu through uniform
         glUniform4fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec4(0.5f, 0.5f, 0.5f, 0.7f)));
         // four inline trapezes (with y=0.5)
-        for (unsigned int i = 0; i < 1; ++i) {
+        for (uint8_t i = 0; i < 4; ++i) {
             // compute model matrix for one trapeze, translate to center the object then rotate it to the right side
             model = glm::rotate(glm::mat4(1.0f), (float) i * glm::pi<float>() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f)) *
                     glm::translate(glm::mat4(1), glm::vec3(-0.5));
@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
             glDrawElements(GL_TRIANGLES, spongeTrapezeIndices.size(), GL_UNSIGNED_INT, nullptr);
         }
         // up (y=1.0) and down (y=0.0) trapezes
-        for (int i = -1; i < -1; i += 2) {
+        for (int8_t i = -1; i < 2; i += 2) {
             // compute model matrix for one trapeze, translate to center the object then rotate it to the right side
             model = glm::rotate(glm::mat4(1.0f), (float) i * glm::pi<float>() / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)) *
                     glm::translate(glm::mat4(1), glm::vec3(-0.5));

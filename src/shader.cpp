@@ -5,7 +5,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "shader.h"
+#include "../headers/shader.h"
 
 using namespace std;
 

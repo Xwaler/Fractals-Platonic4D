@@ -3,105 +3,147 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-#include "sponge.h"
+#include "../headers/sponge.h"
 
 using namespace std;
 
-static void addLine(const vector<float> &line, vector<float> &result) {
+/**
+ * Subdivide the given line into four equidistant points
+ * @param line is a vector containing two points
+ * @param result is an empty vector where the subdivision will be written to
+ */
+static void subdivideLine(const vector<float> &line, vector<float> &result) {
+    /* Add the start of the line to the result */
     result.push_back(line[0]);
     result.push_back(line[1]);
     result.push_back(line[2]);
 
-    result.push_back(line[0] + glm::abs(line[0] - line[3]) / 3.0f);
-    result.push_back(line[1] + glm::abs(line[1] - line[4]) / 3.0f);
-    result.push_back(line[2] + glm::abs(line[2] - line[5]) / 3.0f);
+    /* Add a point one third of the way between the two points that describe the line */
+    result.push_back(line[0] -(line[0] - line[3]) / 3.0f);
+    result.push_back(line[1] -(line[1] - line[4]) / 3.0f);
+    result.push_back(line[2] -(line[2] - line[5]) / 3.0f);
 
-    result.push_back(line[0] + glm::abs(line[0] - line[3]) * 2.0f / 3.0f);
-    result.push_back(line[1] + glm::abs(line[1] - line[4]) * 2.0f / 3.0f);
-    result.push_back(line[2] + glm::abs(line[2] - line[5]) * 2.0f / 3.0f);
+    /* Add a point two thirds of the way between the two points that describe the line */
+    result.push_back(line[0] -(line[0] - line[3]) * 2.0f / 3.0f);
+    result.push_back(line[1] -(line[1] - line[4]) * 2.0f / 3.0f);
+    result.push_back(line[2] -(line[2] - line[5]) * 2.0f / 3.0f);
 
+    /* Add the end of the line to the result vector */
     result.push_back(line[3]);
     result.push_back(line[4]);
     result.push_back(line[5]);
 }
 
-static void addSquare(const vector<float> &square, vector<float> &result) {
+/**
+ * Subdivide the given quadrilateral into four equidistant lines.
+ * @param quadrilateral is a vector containing four points
+ * @param result is an empty vector where the subdivision will be written to
+ */
+static void subdivideQuadrilateral(const vector<float> &quadrilateral, vector<float> &result) {
+    /* Extract the first line from the quad (this is simply a side of the polygon) */
     {
-        vector<float> line(square.begin(), square.begin() + 6);
-        addLine(line, result);
+        vector<float> line(quadrilateral.begin(), quadrilateral.begin() + 6);
+        subdivideLine(line, result);
     }
 
+    /* Create two lines between the chosen side and its opposite.
+     * Those lines are parallels and equidistant */
     for (uint8_t i = 1; i < 3; ++i) {
         float startOfLineX, startOfLineY, startOfLineZ;
-        startOfLineX = square[0] + glm::abs(square[0] - square[6]) * (float) i / 3.0f;
-        startOfLineY = square[1] + glm::abs(square[1] - square[7]) * (float) i / 3.0f;
-        startOfLineZ = square[2] + glm::abs(square[2] - square[8]) * (float) i / 3.0f;
+        startOfLineX = quadrilateral[0] -(quadrilateral[0] - quadrilateral[6]) * (float) i / 3.0f;
+        startOfLineY = quadrilateral[1] -(quadrilateral[1] - quadrilateral[7]) * (float) i / 3.0f;
+        startOfLineZ = quadrilateral[2] -(quadrilateral[2] - quadrilateral[8]) * (float) i / 3.0f;
 
         float endOfLineX, endOfLineY, endOfLineZ;
-        endOfLineX = square[3] + glm::abs(square[3] - square[9]) * (float) i / 3.0f;
-        endOfLineY = square[4] + glm::abs(square[4] - square[10]) * (float) i / 3.0f;
-        endOfLineZ = square[5] + glm::abs(square[5] - square[11]) * (float) i / 3.0f;
+        endOfLineX = quadrilateral[3] -(quadrilateral[3] - quadrilateral[9]) * (float) i / 3.0f;
+        endOfLineY = quadrilateral[4] -(quadrilateral[4] - quadrilateral[10]) * (float) i / 3.0f;
+        endOfLineZ = quadrilateral[5] -(quadrilateral[5] - quadrilateral[11]) * (float) i / 3.0f;
 
         vector<float> line = {
                 startOfLineX, startOfLineY, startOfLineZ,
                 endOfLineX, endOfLineY, endOfLineZ,
         };
-        addLine(line, result);
+        subdivideLine(line, result);
     }
 
+    /* Extract the last line from the quad (this is simply the side opposite to the first side) */
     {
-        vector<float> line(square.begin() + 6, square.begin() + 12);
-        addLine(line, result);
+        vector<float> line(quadrilateral.begin() + 6, quadrilateral.begin() + 12);
+        subdivideLine(line, result);
     }
 }
 
 /**
- * Subdivide the given cube in a Mender Sponge, stopping at the given rank
- * @param rank the rank when to stop subdivision. 0 is a basic cube
- * @param cube cube's coordinates (first face, then second face (the first vertex of the second face must be
- * adjacent to the first vertex of the first face and so one)
- * @return the array of vertices describing the Mender Sponge demanded
+ * Subdivide the given parallelepiped into four equidistant faces
+ * @param parallelepiped is a vector of eights points given in the following order :
+ *        first face, then opposite face (each face is given in a Z like pattern, e.g : top left, top right,
+ *        bottom left, bottom right).
+ *        The second face must be given in the same order as the first one (e.g : if the first point given for the first
+ *        face was the top left one, the second face must start with the top left one adn so on.)
+ * @param result is an empty vector where the subdivision will be written to
  */
-void subdivide(uint8_t rank, const vector<float> &cube, vector<float> &vertices, vector<unsigned int> &indices) {
+static void subdivideParallelepiped(const vector<float> &parallelepiped, vector<float> &result) {
+    /* Extract the first face of the polygon */
     {
-        vector<float> square(cube.begin(), cube.begin() + 12);
-        addSquare(square, vertices);
+        vector<float> quadrilateral(parallelepiped.begin(), parallelepiped.begin() + 12);
+        subdivideQuadrilateral(quadrilateral, result);
     }
 
+    /* Create two quadrilateral between the chosen face and its opposite.
+    * Those quadrilateral are parallels and equidistant */
     for (uint8_t i = 1; i < 3; ++i) {
         float upLeftCornerX, upLeftCornerY, upLeftCornerZ;
-        upLeftCornerX = cube[0] + glm::abs(cube[0] - cube[12]) * (float) i / 3.0f;
-        upLeftCornerY = cube[1] + glm::abs(cube[1] - cube[13]) * (float) i / 3.0f;
-        upLeftCornerZ = cube[2] + glm::abs(cube[2] - cube[14]) * (float) i / 3.0f;
+        upLeftCornerX = parallelepiped[0] -(parallelepiped[0] - parallelepiped[12]) * (float) i / 3.0f;
+        upLeftCornerY = parallelepiped[1] -(parallelepiped[1] - parallelepiped[13]) * (float) i / 3.0f;
+        upLeftCornerZ = parallelepiped[2] -(parallelepiped[2] - parallelepiped[14]) * (float) i / 3.0f;
 
         float upRightCornerX, upRightCornerY, upRightCornerZ;
-        upRightCornerX = cube[3] + glm::abs(cube[3] - cube[15]) * (float) i / 3.0f;
-        upRightCornerY = cube[4] + glm::abs(cube[4] - cube[16]) * (float) i / 3.0f;
-        upRightCornerZ = cube[5] + glm::abs(cube[5] - cube[17]) * (float) i / 3.0f;
+        upRightCornerX = parallelepiped[3] -(parallelepiped[3] - parallelepiped[15]) * (float) i / 3.0f;
+        upRightCornerY = parallelepiped[4] -(parallelepiped[4] - parallelepiped[16]) * (float) i / 3.0f;
+        upRightCornerZ = parallelepiped[5] -(parallelepiped[5] - parallelepiped[17]) * (float) i / 3.0f;
 
         float downLeftCornerX, downLeftCornerY, downLeftCornerZ;
-        downLeftCornerX = cube[6] + glm::abs(cube[6] - cube[18]) * (float) i / 3.0f;
-        downLeftCornerY = cube[7] + glm::abs(cube[7] - cube[19]) * (float) i / 3.0f;
-        downLeftCornerZ = cube[8] + glm::abs(cube[8] - cube[20]) * (float) i / 3.0f;
+        downLeftCornerX = parallelepiped[6] -(parallelepiped[6] - parallelepiped[18]) * (float) i / 3.0f;
+        downLeftCornerY = parallelepiped[7] -(parallelepiped[7] - parallelepiped[19]) * (float) i / 3.0f;
+        downLeftCornerZ = parallelepiped[8] -(parallelepiped[8] - parallelepiped[20]) * (float) i / 3.0f;
 
         float downRightCornerX, downRightCornerY, downRightCornerZ;
-        downRightCornerX = cube[9] + glm::abs(cube[9] - cube[21]) * (float) i / 3.0f;
-        downRightCornerY = cube[10] + glm::abs(cube[10] - cube[22]) * (float) i / 3.0f;
-        downRightCornerZ = cube[11] + glm::abs(cube[11] - cube[23]) * (float) i / 3.0f;
+        downRightCornerX = parallelepiped[9] -(parallelepiped[9] - parallelepiped[21]) * (float) i / 3.0f;
+        downRightCornerY = parallelepiped[10] -(parallelepiped[10] - parallelepiped[22]) * (float) i / 3.0f;
+        downRightCornerZ = parallelepiped[11] -(parallelepiped[11] - parallelepiped[23]) * (float) i / 3.0f;
 
-        vector<float> square = {
+        vector<float> quadrilateral = {
                 upLeftCornerX, upLeftCornerY, upLeftCornerZ,
                 upRightCornerX, upRightCornerY, upRightCornerZ,
                 downLeftCornerX, downLeftCornerY, downLeftCornerZ,
                 downRightCornerX, downRightCornerY, downRightCornerZ,
         };
-        addSquare(square, vertices);
+        subdivideQuadrilateral(quadrilateral, result);
     }
 
+    /* Extract the last quadrilateral from the parallelepiped (this is simply the face opposite to the first face) */
     {
-        vector<float> square(cube.begin() + 12, cube.begin() + 24);
-        addSquare(square, vertices);
+        vector<float> quadrilateral(parallelepiped.begin() + 12, parallelepiped.begin() + 24);
+        subdivideQuadrilateral(quadrilateral, result);
     }
+}
+
+/**
+ * Subdivide the given parallelepiped in a Menger Sponge like pattern, stopping at the given depth.
+ * Vertices will be created, then face will be added using those new vertices.
+ * @param depth is the depth when to stop subdivision. 0 is a basic cube
+ * @param parallelepiped is a vector of eights points given in the following order :
+ *        first face, then opposite face (each face is given in a Z like pattern, e.g : top left, top right,
+ *        bottom left, bottom right).
+ *        The second face must be given in the same order as the first one (e.g : if the first point given for the first
+ *        face was the top left one, the second face must start with the top left one adn so on.)
+ * @param vertices is an empty vector where the subdivision will be written to
+ * @param indices is an empty vector where the indices describing the faces will be written to
+ */
+void subdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
+               vector<unsigned int> &indices) {
+
+    subdivideParallelepiped(parallelepiped, vertices);
 
     indices = {0, 3, 4,
                4, 3, 7,
@@ -242,14 +284,14 @@ void getSpongeNormals(const vector<float> &vertices, const vector<unsigned int> 
     }
 }
 
-static uint64_t getNumberOfCubes(int8_t rank) {
-    if (rank == -1) {
+static uint64_t getNumberOfCubes(int8_t depth) {
+    if (depth == -1) {
         return 0;
     } else {
-        return pow(20, rank);
+        return pow(20, depth);
     }
 }
 
-static uint64_t getNumberOfVertices(uint8_t rank) {
-    return getNumberOfCubes(rank) * 32 + 8;
+static uint64_t getNumberOfVertices(uint8_t depth) {
+    return getNumberOfCubes(depth) * 32 + 8;
 }
