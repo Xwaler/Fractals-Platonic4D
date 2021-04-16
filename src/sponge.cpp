@@ -113,21 +113,22 @@ std::vector<uint8_t> innerParts = { 5, 21,  9,
 
 
 enum Faces{
-    Front = 0,
-    Top = 1,
+    Back = 0,
+    Bottom = 1,
     Right = 2,
-    Bottom = 3,
+    Top = 3,
     Left = 4,
-    Back = 5,
+    Front = 5,
 };
 
 using namespace std;
 
+void recursiveSubdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
+                        vector<uint32_t> &indices, const vector<Faces>& parentApparentFaces);
+
 void addFace(uint64_t size, vector<uint32_t> &indices, Faces face) {
-    std::cout << unsigned(face) << std::endl;
-    std::cout << unsigned(size) << std::endl;
     for (uint8_t index : *(faceIndicesList[face])){
-        indices.push_back(index + size - 192);
+        indices.push_back(index + (size - 192) / 3);
     }
 }
 
@@ -138,7 +139,7 @@ void addFaces(uint64_t size, vector<uint32_t> &indices, const vector<Faces> &app
         }
     }
     for (uint8_t index : innerParts){
-        indices.push_back(index + size - 192);
+        indices.push_back(index + (size - 192) / 3);
     }
 }
 
@@ -287,45 +288,206 @@ static void subdivideParallelepiped(const vector<float> &parallelepiped, vector<
     }
 }
 
+void subdivideChild(uint8_t depth, vector<float> &vertices, vector<uint32_t> &indices,
+                    const vector<float>& subdivisionResult, const vector <uint8_t>& childIndices,
+                    const vector <Faces> &parentApparentFaces, const vector <Faces>& childPossiblyApparentFaces,
+                    const vector <Faces>& childMandatoryFaces) {
+
+    /* Extract the first child parallelepiped */
+    vector<float> childParallelepiped;
+    for (uint8_t index : childIndices){
+        addPointToVector(childParallelepiped, subdivisionResult, index);
+    }
+
+    /* Indicate which faces are worth drawing */
+    vector<Faces> childApparentFaces;
+    for (Faces face : childPossiblyApparentFaces){
+        if (contains(parentApparentFaces, face)){
+            childApparentFaces.push_back(face);
+        }
+    }
+
+    childApparentFaces.insert(childApparentFaces.end(), childMandatoryFaces.begin(), childMandatoryFaces.end());
+
+    /* Subdivide the child parallelepiped */
+    recursiveSubdivide(depth - 1, childParallelepiped, vertices, indices, childApparentFaces);
+}
+
+
+
 void recursiveSubdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
-                        vector<uint32_t> &indices, const vector<Faces>& apparentFaces){
+                        vector<uint32_t> &indices, const vector<Faces> &parentApparentFaces) {
 
     if (depth > 0){
         /* Subdivide the given parallelepiped into 27 smaller one */
         vector<float> subdivisionResult;
         subdivideParallelepiped(parallelepiped, subdivisionResult);
 
-        /* Extract the first child parallelepiped */
-        vector<float> childParallelepiped;
-        addPointToVector(childParallelepiped, subdivisionResult, 0);
-        addPointToVector(childParallelepiped, subdivisionResult, 1);
-        addPointToVector(childParallelepiped, subdivisionResult, 4);
-        addPointToVector(childParallelepiped, subdivisionResult, 5);
-        addPointToVector(childParallelepiped, subdivisionResult, 16);
-        addPointToVector(childParallelepiped, subdivisionResult, 17);
-        addPointToVector(childParallelepiped, subdivisionResult, 20);
-        addPointToVector(childParallelepiped, subdivisionResult, 21);
-
-        /* Indicate which faces are worth drawing */
-        vector<Faces> childApparentFaces;
-        if (contains(apparentFaces, Front)){
-            childApparentFaces.push_back(Front);
-        }
-        if (contains(apparentFaces, Left)){
-            childApparentFaces.push_back(Left);
-        }
-        if (contains(apparentFaces, Top)){
-            childApparentFaces.push_back(Top);
+        /* Speaking inside the parent parallelepiped, X=0, Y=0, Z=2 (front face, bottom row, last column) */
+        {
+            vector<uint8_t> childIndices = {0,1,4,5,16,17,20,21};
+            vector<Faces> childPossiblyApparentFaces = {Back, Left, Bottom};
+            vector<Faces> childMandatoryFaces;
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
         }
 
-        /* Subdivide the child parallelepiped */
-        recursiveSubdivide(depth - 1, childParallelepiped, vertices, indices, childApparentFaces);
+        /* X=1, Y=0, Z=2 */
+        {
+            vector<uint8_t> childIndices = {1,2,5,6,17,18,21,22};
+            vector<Faces> childPossiblyApparentFaces = {Back, Bottom};
+            vector<Faces> childMandatoryFaces = {Top, Front};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=2, Y=0, Z=2 */
+        {
+            vector<uint8_t> childIndices = {2,3,6,7,18,19,22,23};
+            vector<Faces> childPossiblyApparentFaces = {Back, Bottom, Right};
+            vector<Faces> childMandatoryFaces;
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=2, Y=0, Z=1 */
+        {
+            vector<uint8_t> childIndices = {18,19,22,23,34,35,38,39};
+            vector<Faces> childPossiblyApparentFaces = {Bottom, Right};
+            vector<Faces> childMandatoryFaces = {Top, Left};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=0, Y=0, Z=1 */
+        {
+            vector<uint8_t> childIndices = {16,17,20,21,32,33,36,37};
+            vector<Faces> childPossiblyApparentFaces = {Left, Bottom};
+            vector<Faces> childMandatoryFaces = {Top, Right};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=0, Y=0, Z=0 */
+        {
+            vector<uint8_t> childIndices = {32,33,36,37,48,49,52,53};
+            vector<Faces> childPossiblyApparentFaces = {Left, Bottom, Front};
+            vector<Faces> childMandatoryFaces;
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=1, Y=0, Z=0 */
+        {
+            vector<uint8_t> childIndices = {33,34,37,38,49,50,53,54};
+            vector<Faces> childPossiblyApparentFaces = {Bottom, Front};
+            vector<Faces> childMandatoryFaces = {Top, Back};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=2, Y=0, Z=0 */
+        {
+            vector<uint8_t> childIndices = {34,35,38,39,50,51,54,55};
+            vector<Faces> childPossiblyApparentFaces = {Bottom, Front, Right};
+            vector<Faces> childMandatoryFaces;
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=2, Y=1, Z=0 */
+        {
+            vector<uint8_t> childIndices = {38,39,42,43,54,55,58,59};
+            vector<Faces> childPossiblyApparentFaces = {Front, Right};
+            vector<Faces> childMandatoryFaces = {Back, Left};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=0, Y=1, Z=0 */
+        {
+            vector<uint8_t> childIndices = {36,37,40,41,52,53,56,57};
+            vector<Faces> childPossiblyApparentFaces = {Front, Left};
+            vector<Faces> childMandatoryFaces = {Back, Right};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=0, Y=1, Z=2 */
+        {
+            vector<uint8_t> childIndices = {4,5,8,9,20,21,24,25};
+            vector<Faces> childPossiblyApparentFaces = {Back, Left};
+            vector<Faces> childMandatoryFaces = {Front, Right};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=2, Y=1, Z=2 */
+        {
+            vector<uint8_t> childIndices = {6,7,10,11,22,23,26,27};
+            vector<Faces> childPossiblyApparentFaces = {Back, Right};
+            vector<Faces> childMandatoryFaces = {Front, Left};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=2, Y=2, Z=2 */
+        {
+            vector<uint8_t> childIndices = {10,11,14,15,26,27,30,31};
+            vector<Faces> childPossiblyApparentFaces = {Back, Right, Top};
+            vector<Faces> childMandatoryFaces;
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=1, Y=2, Z=2 */
+        {
+            vector<uint8_t> childIndices = {9,10,13,14,25,26,29,30};
+            vector<Faces> childPossiblyApparentFaces = {Back, Top};
+            vector<Faces> childMandatoryFaces = {Front, Bottom};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=0, Y=2, Z=2 */
+        {
+            vector<uint8_t> childIndices = {8,9,12,13,24,25,28,29};
+            vector<Faces> childPossiblyApparentFaces = {Back, Left, Top};
+            vector<Faces> childMandatoryFaces;
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=0, Y=2, Z=1 */
+        {
+            vector<uint8_t> childIndices = {24,25,28,29,40,41,44,45};
+            vector<Faces> childPossiblyApparentFaces = {Left, Top};
+            vector<Faces> childMandatoryFaces = {Bottom, Right};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=2, Y=2, Z=1 */
+        {
+            vector<uint8_t> childIndices = {26,27,30,31,42,43,46,47};
+            vector<Faces> childPossiblyApparentFaces = {Right, Top};
+            vector<Faces> childMandatoryFaces = {Bottom, Left};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=2, Y=2, Z=0 */
+        {
+            vector<uint8_t> childIndices = {42,43,46,47,58,59,62,63};
+            vector<Faces> childPossiblyApparentFaces = {Right, Top, Front};
+            vector<Faces> childMandatoryFaces;
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=1, Y=2, Z=0 */
+        {
+            vector<uint8_t> childIndices = {41,42,45,46,57,58,61,62};
+            vector<Faces> childPossiblyApparentFaces = {Front, Top};
+            vector<Faces> childMandatoryFaces = {Bottom, Back};
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
+        /* X=1, Y=2, Z=0 */
+        {
+            vector<uint8_t> childIndices = {40,42,44,45,56,57,60,61};
+            vector<Faces> childPossiblyApparentFaces = {Left, Top, Front};
+            vector<Faces> childMandatoryFaces;
+            subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces, childPossiblyApparentFaces, childMandatoryFaces);
+        }
+
     } else {
         subdivideParallelepiped(parallelepiped, vertices);
-        addFaces(vertices.size(), indices, apparentFaces);
+        addFaces(vertices.size(), indices, parentApparentFaces);
     }
 }
-
 
 
 /**
@@ -342,7 +504,7 @@ void recursiveSubdivide(uint8_t depth, const vector<float> &parallelepiped, vect
  */
 void subdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
                vector<uint32_t> &indices) {
-    vector<Faces> apparentFaces = {Front, Top, Right, Bottom, Left, Back};
+    vector<Faces> apparentFaces = {Back, Bottom, Right, Top, Left, Front};
     recursiveSubdivide(depth, parallelepiped, vertices, indices, apparentFaces);
 }
 

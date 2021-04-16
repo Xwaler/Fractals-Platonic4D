@@ -28,7 +28,7 @@ int main() {
     };
     vector<float> spongeCubeVertices; vector<float> spongeCubeNormals; vector<uint32_t> spongeCubeIndices;
     /* Generate Menger's Sponge vertices and indices */
-    subdivide(1, cubePoints, spongeCubeVertices, spongeCubeIndices);
+    subdivide(3, cubePoints, spongeCubeVertices, spongeCubeIndices);
     /* Duplicate vertices used by many "sides" to allow calculation of independent vertices normals */
     duplicateVertices(spongeCubeVertices, spongeCubeIndices);
     /* Compute said normals */
@@ -44,7 +44,7 @@ int main() {
     };
     vector<float> spongeTrapezeVertices; vector<float> spongeTrapezeNormals; vector<uint32_t> spongeTrapezeIndices;
     /* Generate Menger's Sponge vertices and indices */
-    subdivide(1, trapezePoints, spongeTrapezeVertices, spongeTrapezeIndices);
+    subdivide(3, trapezePoints, spongeTrapezeVertices, spongeTrapezeIndices);
     /* Duplicate vertices used by many "sides" to allow calculation of independent vertices normals */
     duplicateVertices(spongeTrapezeVertices, spongeTrapezeIndices);
     /* Compute said normals */
