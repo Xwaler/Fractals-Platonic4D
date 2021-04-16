@@ -9,7 +9,7 @@ double Window::scroll_speed = 0.2;
 bool Window::leftButtonPressed = false;
 bool Window::wireframe = false;
 
-Window::Window() {
+Window::Window() : sponge(){
     initOpenGL();
     loadShaders();
     createArraysAndBuffers();
@@ -122,11 +122,11 @@ void Window::createArraysAndBuffers() {
 
 void Window::fillVertexArray(VAO_ID ID) {
     /* Generate Menger's Sponge vertices and indices */
-    subdivide(3, points[ID], vertices[ID], indices[ID]);
+    sponge.subdivide(3, points[ID], vertices[ID], indices[ID]);
     /* Duplicate vertices used by many "sides" to allow calculation of independent vertices normals */
-    duplicateVertices(vertices[ID], indices[ID]);
+    Sponge::duplicateVertices(vertices[ID], indices[ID]);
     /* Compute said normals */
-    computeSpongeNormals(vertices[ID], indices[ID], normals[ID]);
+    Sponge::computeSpongeNormals(vertices[ID], indices[ID], normals[ID]);
 
     /* Load vertices, normals and indices to buffers */
     /* Bind wanted vertex array */

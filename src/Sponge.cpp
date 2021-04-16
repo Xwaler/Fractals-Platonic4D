@@ -1,139 +1,181 @@
-#include <iostream>
-#include "../headers/sponge.h"
-
-std::vector<uint8_t> frontFaceIndices = { 0,  3,  4,
-                                          4,  3,  7,
-                                          4,  5,  8,
-                                          8,  5,  9,
-                                          6,  7, 10,
-                                         10,  7, 11,
-                                          8, 11, 12,
-                                         12, 11, 15};
-
-std::vector<uint8_t> topFaceIndices = {48, 51, 32,
-                                       32, 51, 35,
-                                       32, 33, 16,
-                                       16, 33, 17,
-                                       34, 35, 18,
-                                       18, 35, 19,
-                                       16, 19,  0,
-                                        0, 19,  3};
-
-std::vector<uint8_t> rightFaceIndices = { 3, 51,  7,
-                                          7, 51, 55,
-                                          7, 23, 11,
-                                         11, 23, 27,
-                                         39, 55, 43,
-                                         43, 55, 59,
-                                         11, 59, 15,
-                                         15, 59, 63};
-
-std::vector<uint8_t> bottomFaceIndices = {12, 15, 28,
-                                          28, 15, 31,
-                                          28, 29, 44,
-                                          44, 29, 45,
-                                          30, 31, 46,
-                                          46, 31, 47,
-                                          44, 47, 60,
-                                          60, 47, 63};
-
-std::vector<uint8_t> leftFaceIndices = {48,  0, 52,
-                                        52,  0,  4,
-                                        52, 36, 56,
-                                        56, 36, 40,
-                                        20,  4, 24,
-                                        24,  4,  8,
-                                        56,  8, 60,
-                                        60,  8, 12};
-
-std::vector<uint8_t> backFaceIndices = {60, 63, 56,
-                                        56, 63, 59,
-                                        56, 57, 52,
-                                        52, 57, 53,
-                                        58, 59, 54,
-                                        54, 59, 55,
-                                        52, 55, 48,
-                                        48, 55, 51};
-
-std::vector<std::vector<uint8_t> *> faceIndicesList = {&frontFaceIndices, &topFaceIndices, &rightFaceIndices,
-                                                       &bottomFaceIndices, &leftFaceIndices, &backFaceIndices};
-
-std::vector<uint8_t> innerParts = { 5, 21,  9,
-                                    9, 21, 25,
-                                    9, 25, 10,
-                                   10, 25, 26,
-                                   10, 26,  6,
-                                    6, 26, 22,
-                                    6, 22,  5,
-                                    5, 22, 21,
-
-                                   23, 22, 27,
-                                   27, 22, 26,
-                                   27, 26, 43,
-                                   43, 26, 42,
-                                   43, 42, 39,
-                                   39, 42, 38,
-                                   39, 38, 23,
-                                   23, 38, 22,
-
-                                   29, 25, 45,
-                                   45, 25, 41,
-                                   45, 41, 46,
-                                   46, 41, 42,
-                                   46, 42, 30,
-                                   30, 42, 26,
-                                   30, 26, 29,
-                                   29, 26, 25,
-
-                                   57, 41, 53,
-                                   53, 41, 37,
-                                   53, 37, 54,
-                                   54, 37, 38,
-                                   54, 38, 58,
-                                   58, 38, 42,
-                                   58, 42, 57,
-                                   57, 42, 41,
-
-                                   36, 37, 40,
-                                   40, 37, 41,
-                                   40, 41, 24,
-                                   24, 41, 25,
-                                   24, 25, 20,
-                                   20, 25, 21,
-                                   20, 21, 36,
-                                   36, 21, 37,
-
-                                   33, 37, 17,
-                                   17, 37, 21,
-                                   17, 21, 18,
-                                   18, 21, 22,
-                                   18, 22, 34,
-                                   34, 22, 38,
-                                   34, 38, 33,
-                                   33, 38, 37};
-
-
-enum Faces {
-    Back = 0,
-    Bottom = 1,
-    Right = 2,
-    Top = 3,
-    Left = 4,
-    Front = 5,
-};
+#include "../headers/Sponge.h"
 
 using namespace std;
 
-void recursiveSubdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
-                        vector<uint32_t> &indices, const vector<Faces> &parentApparentFaces);
+Sponge::Sponge(){
+    frontFaceIndices = { 0,  3,  4,
+                         4,  3,  7,
+                         4,  5,  8,
+                         8,  5,  9,
+                         6,  7, 10,
+                         10,  7, 11,
+                         8, 11, 12,
+                         12, 11, 15};
 
-void addFace(uint64_t size, vector<uint32_t> &indices, Faces face) {
+    topFaceIndices = {48, 51, 32,
+                      32, 51, 35,
+                      32, 33, 16,
+                      16, 33, 17,
+                      34, 35, 18,
+                      18, 35, 19,
+                      16, 19,  0,
+                      0, 19,  3};
+
+    rightFaceIndices = { 3, 51,  7,
+                         7, 51, 55,
+                         7, 23, 11,
+                         11, 23, 27,
+                         39, 55, 43,
+                         43, 55, 59,
+                         11, 59, 15,
+                         15, 59, 63};
+
+    bottomFaceIndices = {12, 15, 28,
+                         28, 15, 31,
+                         28, 29, 44,
+                         44, 29, 45,
+                         30, 31, 46,
+                         46, 31, 47,
+                         44, 47, 60,
+                         60, 47, 63};
+
+    leftFaceIndices = {48,  0, 52,
+                       52,  0,  4,
+                       52, 36, 56,
+                       56, 36, 40,
+                       20,  4, 24,
+                       24,  4,  8,
+                       56,  8, 60,
+                       60,  8, 12};
+
+    backFaceIndices = {60, 63, 56,
+                       56, 63, 59,
+                       56, 57, 52,
+                       52, 57, 53,
+                       58, 59, 54,
+                       54, 59, 55,
+                       52, 55, 48,
+                       48, 55, 51};
+
+    faceIndicesList = {&frontFaceIndices, &topFaceIndices, &rightFaceIndices, &bottomFaceIndices, &leftFaceIndices,
+                       &backFaceIndices};
+
+    innerParts = { 5, 21,  9,
+                   9, 21, 25,
+                   9, 25, 10,
+                   10, 25, 26,
+                   10, 26,  6,
+                   6, 26, 22,
+                   6, 22,  5,
+                   5, 22, 21,
+
+                   23, 22, 27,
+                   27, 22, 26,
+                   27, 26, 43,
+                   43, 26, 42,
+                   43, 42, 39,
+                   39, 42, 38,
+                   39, 38, 23,
+                   23, 38, 22,
+
+                   29, 25, 45,
+                   45, 25, 41,
+                   45, 41, 46,
+                   46, 41, 42,
+                   46, 42, 30,
+                   30, 42, 26,
+                   30, 26, 29,
+                   29, 26, 25,
+
+                   57, 41, 53,
+                   53, 41, 37,
+                   53, 37, 54,
+                   54, 37, 38,
+                   54, 38, 58,
+                   58, 38, 42,
+                   58, 42, 57,
+                   57, 42, 41,
+
+                   36, 37, 40,
+                   40, 37, 41,
+                   40, 41, 24,
+                   24, 41, 25,
+                   24, 25, 20,
+                   20, 25, 21,
+                   20, 21, 36,
+                   36, 21, 37,
+
+                   33, 37, 17,
+                   17, 37, 21,
+                   17, 21, 18,
+                   18, 21, 22,
+                   18, 22, 34,
+                   34, 22, 38,
+                   34, 38, 33,
+                   33, 38, 37};
+}
+
+void Sponge::subdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
+                       vector<uint32_t> &indices) {
+    vector<Faces> apparentFaces = {Back, Bottom, Right, Top, Left, Front};
+    recursiveSubdivide(depth, parallelepiped, vertices, indices, apparentFaces);
+}
+
+void Sponge::computeSpongeNormals(const vector<float> &vertices, const vector<uint32_t> &indices,
+                                  vector<float> &normals) {
+    normals.resize(vertices.size());
+    for (uint32_t i = 0; i < indices.size(); i += 6) {
+        glm::vec3 a(
+                getPointAbscissa(vertices, indices[i]),
+                getPointOrdinate(vertices, indices[i]),
+                getPointHeight(vertices, indices[i])
+        );
+        glm::vec3 b(
+                getPointAbscissa(vertices, indices[i + 1]),
+                getPointOrdinate(vertices, indices[i + 1]),
+                getPointHeight(vertices, indices[i + 1])
+        );
+        glm::vec3 c(
+                getPointAbscissa(vertices, indices[i + 2]),
+                getPointOrdinate(vertices, indices[i + 2]),
+                getPointHeight(vertices, indices[i + 2])
+        );
+        glm::vec3 U = b - a, V = c - a;
+        glm::vec3 normal = {U.y * V.z - U.z * V.y, U.z * V.x - U.x * V.z, U.x * V.y - U.y * V.x};
+
+        for (uint8_t j = 0; j < 6; ++j) {
+            normals[3 * indices[i + j]] = normal.x;
+            normals[3 * indices[i + j] + 1] = normal.y;
+            normals[3 * indices[i + j] + 2] = normal.z;
+        }
+    }
+}
+
+void Sponge::duplicateVertices(vector<float> &vertices, vector<uint32_t> &indices) {
+    vector<float> newVertices;
+    uint32_t nextIndex = vertices.size() / 3;
+
+    map<uint32_t, uint8_t> count;
+    for (uint32_t &index: indices) {
+        if (count.find(index) == count.end()) count[index] = 1;
+        else {
+            ++count[index];
+            newVertices.push_back(getPointAbscissa(vertices, index));
+            newVertices.push_back(getPointOrdinate(vertices, index));
+            newVertices.push_back(getPointHeight(vertices, index));
+            index = nextIndex++;
+        }
+    }
+    vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
+}
+
+void Sponge::addFace(uint64_t size, vector<uint32_t> &indices, Faces face){
     for (uint8_t index : *(faceIndicesList[face])) {
         indices.push_back(index + (size - 192) / 3);
     }
 }
 
-void addFaces(uint64_t size, vector<uint32_t> &indices, const vector<Faces> &apparentFaces) {
+void Sponge::addFaces(uint64_t size, vector<uint32_t> &indices, const vector<Faces> &apparentFaces){
     if (!apparentFaces.empty()) {
         for (Faces face : apparentFaces) {
             addFace(size, indices, face);
@@ -144,37 +186,7 @@ void addFaces(uint64_t size, vector<uint32_t> &indices, const vector<Faces> &app
     }
 }
 
-bool contains(const vector<Faces> &vector, Faces element) {
-    return any_of(vector.begin(), vector.end(), [&element](Faces face){
-        return face == element;
-    });
-}
-
-float getPointAbscissa(const vector<float> &sourceVector, uint32_t pointIndex) {
-    return sourceVector[pointIndex * 3];
-}
-
-float getPointOrdinate(const vector<float> &sourceVector, uint32_t pointIndex) {
-    return sourceVector[pointIndex * 3 + 1];
-}
-
-float getPointHeight(const vector<float> &sourceVector, uint32_t pointIndex) {
-    return sourceVector[pointIndex * 3 + 2];
-}
-
-vector<float> &addPointToVector(vector<float> &targetVector, const vector<float> &sourceVector, uint32_t pointIndex) {
-    targetVector.push_back(getPointAbscissa(sourceVector, pointIndex));
-    targetVector.push_back(getPointOrdinate(sourceVector, pointIndex));
-    targetVector.push_back(getPointHeight(sourceVector, pointIndex));
-    return targetVector;
-}
-
-/**
- * Subdivide the given line into four equidistant points
- * @param line is a vector containing two points
- * @param result is an empty vector where the subdivision will be written to
- */
-static void subdivideLine(const vector<float> &line, vector<float> &result) {
+void Sponge::subdivideLine(const vector<float> &line, vector<float> &result) {
     /* Add the start of the line to the result */
     addPointToVector(result, line, 0);
 
@@ -192,12 +204,7 @@ static void subdivideLine(const vector<float> &line, vector<float> &result) {
     addPointToVector(result, line, 1);
 }
 
-/**
- * Subdivide the given quadrilateral into four equidistant lines.
- * @param quadrilateral is a vector containing four points
- * @param result is an empty vector where the subdivision will be written to
- */
-static void subdivideQuadrilateral(const vector<float> &quadrilateral, vector<float> &result) {
+void Sponge::subdivideQuadrilateral(const vector<float> &quadrilateral, vector<float> &result) {
     /* Extract the first line from the quad (this is simply a side of the polygon) */
     {
         vector<float> line(quadrilateral.begin(), quadrilateral.begin() + 6);
@@ -237,16 +244,7 @@ static void subdivideQuadrilateral(const vector<float> &quadrilateral, vector<fl
     }
 }
 
-/**
- * Subdivide the given parallelepiped into four equidistant faces
- * @param parallelepiped is a vector of eights points given in the following order :
- *        first face, then opposite face (each face is given in a Z like pattern, e.g : top left, top right,
- *        bottom left, bottom right).
- *        The second face must be given in the same order as the first one (e.g : if the first point given for the first
- *        face was the top left one, the second face must start with the top left one adn so on.)
- * @param result is an empty vector where the subdivision will be written to
- */
-static void subdivideParallelepiped(const vector<float> &parallelepiped, vector<float> &result) {
+void Sponge::subdivideParallelepiped(const vector<float> &parallelepiped, vector<float> &result) {
     /* Extract the first face of the polygon */
     {
         vector<float> quadrilateral(parallelepiped.begin(), parallelepiped.begin() + 12);
@@ -277,9 +275,9 @@ static void subdivideParallelepiped(const vector<float> &parallelepiped, vector<
         downRightCornerZ = parallelepiped[11] - (parallelepiped[11] - parallelepiped[23]) * (float) i / 3.0f;
 
         vector<float> quadrilateral = {
-                   upLeftCornerX,    upLeftCornerY,    upLeftCornerZ,
-                  upRightCornerX,   upRightCornerY,   upRightCornerZ,
-                 downLeftCornerX,  downLeftCornerY,  downLeftCornerZ,
+                upLeftCornerX,    upLeftCornerY,    upLeftCornerZ,
+                upRightCornerX,   upRightCornerY,   upRightCornerZ,
+                downLeftCornerX,  downLeftCornerY,  downLeftCornerZ,
                 downRightCornerX, downRightCornerY, downRightCornerZ,
         };
         subdivideQuadrilateral(quadrilateral, result);
@@ -292,18 +290,18 @@ static void subdivideParallelepiped(const vector<float> &parallelepiped, vector<
     }
 }
 
-void subdivideChild(uint8_t depth, vector<float> &vertices, vector<uint32_t> &indices,
-                    const vector<float> &subdivisionResult, const vector<uint8_t> &childIndices,
-                    const vector<Faces> &parentApparentFaces, const vector<Faces> &childPossiblyApparentFaces,
-                    const vector<Faces> &childMandatoryFaces) {
+void Sponge::subdivideChild(uint8_t depth, vector<float> &vertices, vector<uint32_t> &indices,
+                            const vector<float> &subdivisionResult, const vector<uint8_t> &childIndices,
+                            const vector<Faces> &parentApparentFaces, const vector<Faces> &childPossiblyApparentFaces,
+                            const vector<Faces> &childMandatoryFaces) {
 
-    /* Extract the first child parallelepiped */
+    /* Extract the child parallelepiped */
     vector<float> childParallelepiped;
     for (uint8_t index : childIndices) {
         addPointToVector(childParallelepiped, subdivisionResult, index);
     }
 
-    /* Indicate which faces are worth drawing */
+    /* Indicate which faces could be worth drawing */
     vector<Faces> childApparentFaces;
     for (Faces face : childPossiblyApparentFaces) {
         if (contains(parentApparentFaces, face)) {
@@ -311,14 +309,15 @@ void subdivideChild(uint8_t depth, vector<float> &vertices, vector<uint32_t> &in
         }
     }
 
+    /* Indicate which faces will be worth drawing */
     childApparentFaces.insert(childApparentFaces.end(), childMandatoryFaces.begin(), childMandatoryFaces.end());
 
     /* Subdivide the child parallelepiped */
     recursiveSubdivide(depth - 1, childParallelepiped, vertices, indices, childApparentFaces);
 }
 
-void recursiveSubdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
-                        vector<uint32_t> &indices, const vector<Faces> &parentApparentFaces) {
+void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
+                                vector<uint32_t> &indices, const vector<Faces> &parentApparentFaces) {
 
     if (depth > 0) {
         /* Subdivide the given parallelepiped into 27 smaller one */
@@ -512,79 +511,3 @@ void recursiveSubdivide(uint8_t depth, const vector<float> &parallelepiped, vect
 }
 
 
-/**
- * Subdivide the given parallelepiped in a Menger Sponge like pattern, stopping at the given depth.
- * Vertices will be created, then face will be added using those new vertices.
- * @param depth is the depth when to stop subdivision. 0 is a basic cube
- * @param parallelepiped is a vector of eights points given in the following order :
- *        first face, then opposite face (each face is given in a Z like pattern, e.g : top left, top right,
- *        bottom left, bottom right).
- *        The second face must be given in the same order as the first one (e.g : if the first point given for the first
- *        face was the top left one, the second face must start with the top left one adn so on.)
- * @param vertices is an empty vector where the subdivision will be written to
- * @param indices is an empty vector where the indices describing the faces will be written to
- */
-void subdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
-               vector<uint32_t> &indices) {
-    vector<Faces> apparentFaces = {Back, Bottom, Right, Top, Left, Front};
-    recursiveSubdivide(depth, parallelepiped, vertices, indices, apparentFaces);
-}
-
-void computeSpongeNormals(const vector<float> &vertices, const vector<uint32_t> &indices, vector<float> &normals) {
-    normals.resize(vertices.size());
-    for (uint32_t i = 0; i < indices.size(); i += 6) {
-        glm::vec3 a(
-                getPointAbscissa(vertices, indices[i]),
-                getPointOrdinate(vertices, indices[i]),
-                getPointHeight(vertices, indices[i])
-        );
-        glm::vec3 b(
-                getPointAbscissa(vertices, indices[i + 1]),
-                getPointOrdinate(vertices, indices[i + 1]),
-                getPointHeight(vertices, indices[i + 1])
-        );
-        glm::vec3 c(
-                getPointAbscissa(vertices, indices[i + 2]),
-                getPointOrdinate(vertices, indices[i + 2]),
-                getPointHeight(vertices, indices[i + 2])
-        );
-        glm::vec3 U = b - a, V = c - a;
-        glm::vec3 normal = {U.y * V.z - U.z * V.y, U.z * V.x - U.x * V.z, U.x * V.y - U.y * V.x};
-
-        for (uint8_t j = 0; j < 6; ++j) {
-            normals[3 * indices[i + j]] = normal.x;
-            normals[3 * indices[i + j] + 1] = normal.y;
-            normals[3 * indices[i + j] + 2] = normal.z;
-        }
-    }
-}
-
-static uint64_t getNumberOfCubes(int8_t depth) {
-    if (depth == -1) {
-        return 0;
-    } else {
-        return pow(20, depth);
-    }
-}
-
-static uint64_t getNumberOfVertices(uint8_t depth) {
-    return getNumberOfCubes(depth) * 32 + 8;
-}
-
-void duplicateVertices(vector<float> &vertices, vector<uint32_t> &indices) {
-    vector<float> newVertices;
-    uint32_t nextIndex = vertices.size() / 3;
-
-    map<uint32_t, uint8_t> count;
-    for (uint32_t &index: indices) {
-        if (count.find(index) == count.end()) count[index] = 1;
-        else {
-            ++count[index];
-            newVertices.push_back(getPointAbscissa(vertices, index));
-            newVertices.push_back(getPointOrdinate(vertices, index));
-            newVertices.push_back(getPointHeight(vertices, index));
-            index = nextIndex++;
-        }
-    }
-    vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
-}

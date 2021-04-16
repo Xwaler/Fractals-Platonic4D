@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "../headers/shader.h"
-#include "../headers/sponge.h"
+#include "Sponge.h"
 
 using namespace std;
 
@@ -50,6 +50,8 @@ private:
     vector<float> vertices[VAO_ID::NUMBER]{};
     vector<float> normals[VAO_ID::NUMBER]{};
     vector<uint32_t> indices[VAO_ID::NUMBER]{};
+
+    Sponge sponge;
 
 public:
     Window();
