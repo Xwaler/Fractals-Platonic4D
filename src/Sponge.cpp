@@ -235,6 +235,7 @@ void Sponge::subdivideQuadrilateral(const vector<float> &quadrilateral, vector<f
         startOfLineY = getCoordinateOneThirdOfTheWay(getPointOrdinate(quadrilateral, 2), getPointOrdinate(quadrilateral, 0));
         startOfLineZ = getCoordinateOneThirdOfTheWay(getPointHeight(quadrilateral, 2), getPointHeight(quadrilateral, 0));
 
+
         float endOfLineX, endOfLineY, endOfLineZ;
         endOfLineX = getCoordinateOneThirdOfTheWay(getPointAbscissa(quadrilateral, 3), getPointAbscissa(quadrilateral, 1));
         endOfLineY = getCoordinateOneThirdOfTheWay(getPointOrdinate(quadrilateral, 3), getPointOrdinate(quadrilateral, 1));
@@ -263,26 +264,58 @@ void Sponge::subdivideParallelepiped(const vector<float> &parallelepiped, vector
 
     /* Create two quadrilateral between the chosen face and its opposite.
     * Those quadrilateral are parallels and equidistant */
-    for (uint8_t i = 1; i < 3; ++i) {
+    {
         float upLeftCornerX, upLeftCornerY, upLeftCornerZ;
-        upLeftCornerX = parallelepiped[0] - (parallelepiped[0] - parallelepiped[12]) * (float) i / 3.0f; //todo replace with getter functions
-        upLeftCornerY = parallelepiped[1] - (parallelepiped[1] - parallelepiped[13]) * (float) i / 3.0f;
-        upLeftCornerZ = parallelepiped[2] - (parallelepiped[2] - parallelepiped[14]) * (float) i / 3.0f;
+        upLeftCornerX = getCoordinateOneThirdOfTheWay(getPointAbscissa(parallelepiped, 0), getPointAbscissa(parallelepiped, 4));
+        upLeftCornerY = getCoordinateOneThirdOfTheWay(getPointOrdinate(parallelepiped, 0), getPointOrdinate(parallelepiped, 4));
+        upLeftCornerZ = getCoordinateOneThirdOfTheWay(getPointHeight(parallelepiped, 0), getPointHeight(parallelepiped, 4));
 
         float upRightCornerX, upRightCornerY, upRightCornerZ;
-        upRightCornerX = parallelepiped[3] - (parallelepiped[3] - parallelepiped[15]) * (float) i / 3.0f;
-        upRightCornerY = parallelepiped[4] - (parallelepiped[4] - parallelepiped[16]) * (float) i / 3.0f;
-        upRightCornerZ = parallelepiped[5] - (parallelepiped[5] - parallelepiped[17]) * (float) i / 3.0f;
+        upRightCornerX = getCoordinateOneThirdOfTheWay(getPointAbscissa(parallelepiped, 1), getPointAbscissa(parallelepiped, 5));
+        upRightCornerY = getCoordinateOneThirdOfTheWay(getPointOrdinate(parallelepiped, 1), getPointOrdinate(parallelepiped, 5));
+        upRightCornerZ = getCoordinateOneThirdOfTheWay(getPointHeight(parallelepiped, 1), getPointHeight(parallelepiped, 5));
 
         float downLeftCornerX, downLeftCornerY, downLeftCornerZ;
-        downLeftCornerX = parallelepiped[6] - (parallelepiped[6] - parallelepiped[18]) * (float) i / 3.0f;
-        downLeftCornerY = parallelepiped[7] - (parallelepiped[7] - parallelepiped[19]) * (float) i / 3.0f;
-        downLeftCornerZ = parallelepiped[8] - (parallelepiped[8] - parallelepiped[20]) * (float) i / 3.0f;
+        downLeftCornerX = getCoordinateOneThirdOfTheWay(getPointAbscissa(parallelepiped, 2), getPointAbscissa(parallelepiped, 6));
+        downLeftCornerY = getCoordinateOneThirdOfTheWay(getPointOrdinate(parallelepiped, 2), getPointOrdinate(parallelepiped, 6));
+        downLeftCornerZ = getCoordinateOneThirdOfTheWay(getPointHeight(parallelepiped, 2), getPointHeight(parallelepiped, 6));
 
         float downRightCornerX, downRightCornerY, downRightCornerZ;
-        downRightCornerX = parallelepiped[9] - (parallelepiped[9] - parallelepiped[21]) * (float) i / 3.0f;
-        downRightCornerY = parallelepiped[10] - (parallelepiped[10] - parallelepiped[22]) * (float) i / 3.0f;
-        downRightCornerZ = parallelepiped[11] - (parallelepiped[11] - parallelepiped[23]) * (float) i / 3.0f;
+        downRightCornerX = getCoordinateOneThirdOfTheWay(getPointAbscissa(parallelepiped, 3), getPointAbscissa(parallelepiped, 7));
+        downRightCornerY = getCoordinateOneThirdOfTheWay(getPointOrdinate(parallelepiped, 3), getPointOrdinate(parallelepiped, 7));
+        downRightCornerZ = getCoordinateOneThirdOfTheWay(getPointHeight(parallelepiped, 3), getPointHeight(parallelepiped, 7));
+
+        vector<float> quadrilateral = {
+                upLeftCornerX,    upLeftCornerY,    upLeftCornerZ,
+                upRightCornerX,   upRightCornerY,   upRightCornerZ,
+                downLeftCornerX,  downLeftCornerY,  downLeftCornerZ,
+                downRightCornerX, downRightCornerY, downRightCornerZ,
+        };
+        subdivideQuadrilateral(quadrilateral, result);
+    }
+
+    /* Create two quadrilateral between the chosen face and its opposite.
+    * Those quadrilateral are parallels and equidistant */
+    {
+        float upLeftCornerX, upLeftCornerY, upLeftCornerZ;
+        upLeftCornerX = getCoordinateOneThirdOfTheWay(getPointAbscissa(parallelepiped, 4), getPointAbscissa(parallelepiped, 0));
+        upLeftCornerY = getCoordinateOneThirdOfTheWay(getPointOrdinate(parallelepiped, 4), getPointOrdinate(parallelepiped, 0));
+        upLeftCornerZ = getCoordinateOneThirdOfTheWay(getPointHeight(parallelepiped, 4), getPointHeight(parallelepiped, 0));
+
+        float upRightCornerX, upRightCornerY, upRightCornerZ;
+        upRightCornerX = getCoordinateOneThirdOfTheWay(getPointAbscissa(parallelepiped, 5), getPointAbscissa(parallelepiped, 1));
+        upRightCornerY = getCoordinateOneThirdOfTheWay(getPointOrdinate(parallelepiped, 5), getPointOrdinate(parallelepiped, 1));
+        upRightCornerZ = getCoordinateOneThirdOfTheWay(getPointHeight(parallelepiped, 5), getPointHeight(parallelepiped, 1));
+
+        float downLeftCornerX, downLeftCornerY, downLeftCornerZ;
+        downLeftCornerX = getCoordinateOneThirdOfTheWay(getPointAbscissa(parallelepiped, 6), getPointAbscissa(parallelepiped, 2));
+        downLeftCornerY = getCoordinateOneThirdOfTheWay(getPointOrdinate(parallelepiped, 6), getPointOrdinate(parallelepiped, 2));
+        downLeftCornerZ = getCoordinateOneThirdOfTheWay(getPointHeight(parallelepiped, 6), getPointHeight(parallelepiped, 2));
+
+        float downRightCornerX, downRightCornerY, downRightCornerZ;
+        downRightCornerX = getCoordinateOneThirdOfTheWay(getPointAbscissa(parallelepiped, 7), getPointAbscissa(parallelepiped, 3));
+        downRightCornerY = getCoordinateOneThirdOfTheWay(getPointOrdinate(parallelepiped, 7), getPointOrdinate(parallelepiped, 3));
+        downRightCornerZ = getCoordinateOneThirdOfTheWay(getPointHeight(parallelepiped, 7), getPointHeight(parallelepiped, 3));
 
         vector<float> quadrilateral = {
                 upLeftCornerX,    upLeftCornerY,    upLeftCornerZ,
