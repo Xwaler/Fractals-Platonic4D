@@ -12,8 +12,8 @@ set(GLM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/libraries/glm")
 
 include_directories(${GLM_INCLUDE_DIRS})
 
-add_executable(${PROJECT_NAME} src/main.cpp src/shader.cpp headers/shader.h
-        src/vectorTools.cpp headers/vectorTools.h src/Sponge.cpp headers/Sponge.h src/Window.cpp headers/Window.h headers/Faces.h)
+add_executable(${PROJECT_NAME} src/main.cpp src/vectorTools.cpp headers/vectorTools.h
+        src/Sponge.cpp headers/Sponge.h src/Window.cpp headers/Window.h headers/Faces.h)
 
 target_link_libraries(${PROJECT_NAME} glfw)
 

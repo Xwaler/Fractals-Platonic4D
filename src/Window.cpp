@@ -13,7 +13,12 @@ Window::Window() : sponge(){
     initOpenGL();
     loadShaders();
     createArraysAndBuffers();
+}
 
+/**
+ * Initialize hypercube points, create corresponding vertices, normals and indices and push them to the GPU
+ */
+void Window::createMengerSpongeLikeHypercube() {
     points[VAO_ID::CUBE] = {
             0.0f, 0.0f, 0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f, 0.0f,
             0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,
@@ -26,7 +31,10 @@ Window::Window() : sponge(){
     fillVertexArray(VAO_ID::TRAPEZE);
 }
 
-void Window::render() {
+/**
+ * Render loop, compute view and projection matrix then calls drawScene for each VAO
+ */
+void Window::renderMengerSpongeLikeHypercube() {
     while (continueLoop()) {
         /* Draw the background and clear OpenGL render bits */
         clear();
@@ -60,7 +68,7 @@ void Window::render() {
 
 /**
  * Initialize OpenGL, glfw and glad
- * @return 
+ * @return
  */
 void Window::initOpenGL() {
     /* Initialize glfw library and its base parameters */
@@ -98,20 +106,24 @@ void Window::initOpenGL() {
     glLineWidth(4);
 }
 
+/**
+ * Gives window status
+ * @return true if window must stay open, false otherwise
+ */
 bool Window::continueLoop() {
     return !glfwWindowShouldClose(window);
 }
 
 /**
- * Compile shaders and add them to the window program
+ * Reads and compile shaders then adds them to the program
  */
 void Window::loadShaders() {
     program = glCreateProgram();
-    initProgram(program, "../shaders/vShader.glsl", "../shaders/fShader.glsl");
+    initProgram("../shaders/vShader.glsl", "../shaders/fShader.glsl");
 }
 
 /**
- * Initialize vertex arrays and buffers
+ * Allocate and link array/buffers to OpenGL
  */
 void Window::createArraysAndBuffers() {
     glGenVertexArrays(VAO_ID::NUMBER, VAO);
@@ -120,6 +132,11 @@ void Window::createArraysAndBuffers() {
     glGenBuffers(VAO_ID::NUMBER, IBO);
 }
 
+/**
+ * Uses the VAOs points array to create vertices, indices and normals. Then load them onto the gpu buffers
+ * and create pointers to those memory spaces for shaders to access them
+ * @param ID of the VAO used to store the data
+ */
 void Window::fillVertexArray(VAO_ID ID) {
     /* Generate Menger's Sponge vertices and indices */
     sponge.subdivide(3, points[ID], vertices[ID], indices[ID]);
@@ -153,14 +170,28 @@ void Window::fillVertexArray(VAO_ID ID) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices[ID].size() * sizeof(uint32_t), indices[ID].data(), GL_STATIC_DRAW);
 }
 
+/**
+ * Sends a 4x4 matrix to a GPU uniform
+ * @param name of the uniform in the shader
+ * @param mat to send
+ */
 void Window::loadUniformMat4f(const char* name, const glm::mat4 &mat) const {
     glUniformMatrix4fv(glGetUniformLocation(program, name), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
+/**
+ * Sends a vec4 to a GPU uniform
+ * @param name of the uniform in the shader
+ * @param vec to send
+ */
 void Window::loadUniformVec4f(const char* name, const glm::vec4 &vec) const {
     glUniform4fv(glGetUniformLocation(program, name), 1, glm::value_ptr(vec));
 }
 
+/**
+ * Binds the selected VAO and draw it's content
+ * @param ID of the VAO to draw
+ */
 void Window::drawScene(VAO_ID ID) {
     /* Bind the trapeze vertex array object */
     glBindVertexArray(VAO[ID]);
@@ -224,7 +255,7 @@ void Window::enableBlending() {
 }
 
 /**
- * Enable depth test to allow OpenGL to draw from back to front
+ * Enables OpenGL depth test
  */
 void Window::enableDepthTest() {
     glEnable(GL_DEPTH_TEST);
@@ -232,7 +263,7 @@ void Window::enableDepthTest() {
 }
 
 /**
- * Disable depth test
+ * Disable OpenGL depth test
  */
 void Window::disableDepthTest() {
     glDisable(GL_DEPTH_TEST);
@@ -247,8 +278,7 @@ void Window::enableFaceCulling() {
 }
 
 /**
- * Get the current cursor position and update the camera position accordingly
- * @param window
+ * Reads mouse input and return updated position vector for the camera
  * @return
  */
 glm::vec3 Window::updateCamera() {
@@ -274,10 +304,86 @@ glm::vec3 Window::updateCamera() {
 }
 
 /**
- * Callback to resize the window
- * @param window
- * @param width
- * @param height
+ * Reads a shader file and return a string of it's content
+ * @param file path
+ * @return string
+ */
+string Window::readShaderFile(const char* file) {
+    std::string vertexCode;
+    std::ifstream vShaderFile;
+    std::stringstream vShaderStream;
+
+    vShaderFile.open(file);
+    vShaderStream << vShaderFile.rdbuf();
+    vShaderFile.close();
+    return vShaderStream.str();
+}
+
+/**
+ * Checks a component for compilation errors
+ * @param shader ID
+ * @param type of the compiled component (VERTEX, FRAGMENT, PROGRAM)
+ */
+void Window::checkCompileErrors(uint32_t shader, const string& type) {
+    int success;
+    char infoLog[1024];
+    if (type != "PROGRAM") {
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            glGetShaderInfoLog(shader, 1024, nullptr, infoLog);
+            cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+        }
+    }
+    else {
+        glGetProgramiv(shader, GL_LINK_STATUS, &success);
+        if (!success) {
+            glGetProgramInfoLog(shader, 1024, nullptr, infoLog);
+            cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+        }
+    }
+}
+
+/**
+ * Compiles a shader from it's code
+ * @param ID of the shader
+ * @param code content as string
+ * @param type of shader (VERTEX, FRAGMENT)
+ */
+void Window::createShader(uint32_t shader, const char* &code, const char* type) {
+    glShaderSource(shader, 1, &code, nullptr);
+    glCompileShader(shader);
+    checkCompileErrors(shader, type);
+}
+
+/**
+ * Compiles shaders and add the to the program
+ * @param vShader file path
+ * @param fShader file path
+ */
+void Window::initProgram(const char* vShader, const char* fShader) const {
+    std::string vertexCode = readShaderFile(vShader);
+    const char* vShaderCode = vertexCode.c_str();
+
+    std::string fragmentCode = readShaderFile(fShader);
+    const char* fShaderCode = fragmentCode.c_str();
+
+    uint32_t vertex = glCreateShader(GL_VERTEX_SHADER), fragment = glCreateShader(GL_FRAGMENT_SHADER);
+    createShader(vertex, vShaderCode, "VERTEX");
+    createShader(fragment, fShaderCode, "FRAGMENT");
+
+    glAttachShader(program, vertex);
+    glAttachShader(program, fragment);
+    glLinkProgram(program);
+    checkCompileErrors(program, "PROGRAM");
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
+}
+
+/**
+ * Called when the window is resized, update the viewport accordingly
+ * @param window unused
+ * @param new width of the window
+ * @param new height of the window
  */
 void Window::framebuffer_size_callback(GLFWwindow* w, int width, int height) {
     WIDTH = width;
@@ -286,12 +392,12 @@ void Window::framebuffer_size_callback(GLFWwindow* w, int width, int height) {
 }
 
 /**
- * Callback to process key presses
- * @param window
- * @param key
- * @param scancode
- * @param action
- * @param mods
+ * Called when the user presses a key
+ * @param window unused
+ * @param key pressed
+ * @param scancode unused
+ * @param action type
+ * @param mods unused
  */
 void Window::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) { // close the window
@@ -304,11 +410,11 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
 }
 
 /**
- * Callback to process mouse button presses, used to detect when the user wants to move the camera
- * @param window
- * @param button
- * @param action
- * @param mods
+ * Called when the user presses a mouse button
+ * @param window unused
+ * @param button pressed
+ * @param action type
+ * @param mods unused
  */
 void Window::mouse_button_callback(GLFWwindow* w, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
@@ -320,20 +426,26 @@ void Window::mouse_button_callback(GLFWwindow* w, int button, int action, int mo
 }
 
 /**
- * Callback to process mouse wheel inputs
- * @param window
- * @param xoffset
- * @param yoffset
+ * Called when the user scrolls
+ * @param window unused
+ * @param xoffset is the rotation difference of the movement in the X axis
+ * @param yoffset is the rotation difference of the movement in the Y axis
  */
 void Window::scroll_callback(GLFWwindow* w, double xoffset, double yoffset) {
     cameraDistance = glm::max(0.5f, cameraDistance - (float) (yoffset * scroll_speed));
 }
 
+/**
+ * Reset background and buffer bit
+ */
 void Window::clear() {
     glClearColor(0.7f, 0.7f, 0.7f, 1.0f); // reset background color
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear opengl buffers
 }
 
+/**
+ * Update the screen to reflect changes
+ */
 void Window::blit() {
     /* Swap the screen buffer to reflect changes */
     glfwSwapBuffers(window);
@@ -341,6 +453,9 @@ void Window::blit() {
     glfwPollEvents();
 }
 
+/**
+ * Clear allocated buffers and closes the window
+ */
 void Window::close() {
     /* Deallocate vertex arrays and buffer */
     glDeleteVertexArrays(2, VAO);

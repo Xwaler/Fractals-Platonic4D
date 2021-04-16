@@ -6,7 +6,8 @@
  */
 int main() {
     Window window;
-    window.render();
+    window.createMengerSpongeLikeHypercube();
+    window.renderMengerSpongeLikeHypercube();
     window.close();
     return 0;
 }
