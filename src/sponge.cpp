@@ -498,7 +498,7 @@ void recursiveSubdivide(uint8_t depth, const vector<float> &parallelepiped, vect
 
         /* X=1, Y=2, Z=0 */
         {
-            vector<uint8_t> childIndices = {40, 42, 44, 45, 56, 57, 60, 61};
+            vector<uint8_t> childIndices = {40, 41, 44, 45, 56, 57, 60, 61};
             vector<Faces> childPossiblyApparentFaces = {Left, Top, Front};
             vector<Faces> childMandatoryFaces;
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
