@@ -27,10 +27,9 @@ Window::Window() {
 }
 
 void Window::render() {
-    /* RENDER LOOP */
     while (continueLoop()) {
         /* Draw the background and clear OpenGL render bits */
-        Window::clear();
+        clear();
 
         /* Update the camera position based on mouse movements */
         glm::vec3 cameraPosition = updateCamera();

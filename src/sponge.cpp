@@ -144,13 +144,8 @@ void addFaces(uint64_t size, vector<uint32_t> &indices, const vector<Faces> &app
     }
 }
 
-bool contains(const vector<Faces> &vector, Faces element) {
-    for (Faces face : vector) {
-        if (face == element) {
-            return true;
-        }
-    }
-    return false;
+bool contains(const vector<Faces> &vector, Faces &element) {
+    return any_of(vector.begin(), vector.end(), [&element](Faces face){ return face == element; });
 }
 
 float getPointAbscissa(const vector<float> &sourceVector, uint32_t pointIndex) {
@@ -539,19 +534,19 @@ void computeSpongeNormals(const vector<float> &vertices, const vector<uint32_t> 
     normals.resize(vertices.size());
     for (uint32_t i = 0; i < indices.size(); i += 6) {
         glm::vec3 a(
-                vertices[3 * indices[i]],
-                vertices[3 * indices[i] + 1],
-                vertices[3 * indices[i] + 2]
+                getPointAbscissa(vertices, indices[i]),
+                getPointOrdinate(vertices, indices[i]),
+                getPointHeight(vertices, indices[i])
         );
         glm::vec3 b(
-                vertices[3 * indices[i + 1]],
-                vertices[3 * indices[i + 1] + 1],
-                vertices[3 * indices[i + 1] + 2]
+                getPointAbscissa(vertices, indices[i + 1]),
+                getPointOrdinate(vertices, indices[i + 1]),
+                getPointHeight(vertices, indices[i + 1])
         );
         glm::vec3 c(
-                vertices[3 * indices[i + 2]],
-                vertices[3 * indices[i + 2] + 1],
-                vertices[3 * indices[i + 2] + 2]
+                getPointAbscissa(vertices, indices[i + 2]),
+                getPointOrdinate(vertices, indices[i + 2]),
+                getPointHeight(vertices, indices[i + 2])
         );
         glm::vec3 U = b - a, V = c - a;
         glm::vec3 normal = {U.y * V.z - U.z * V.y, U.z * V.x - U.x * V.z, U.x * V.y - U.y * V.x};
@@ -578,18 +573,17 @@ static uint64_t getNumberOfVertices(uint8_t depth) {
 
 void duplicateVertices(vector<float> &vertices, vector<uint32_t> &indices) {
     vector<float> newVertices;
-    //uint32_t maxIndex = *max_element(indices.begin(), indices.end());
+    uint32_t nextIndex = vertices.size() / 3;
 
     map<uint32_t, uint8_t> count;
     for (uint32_t &index: indices) {
         if (count.find(index) == count.end()) count[index] = 1;
         else {
             ++count[index];
-            newVertices.push_back(vertices[3 * index]);
-            newVertices.push_back(vertices[3 * index + 1]);
-            newVertices.push_back(vertices[3 * index + 2]);
-            //index = ++maxIndex;
-            index = (vertices.size() + newVertices.size()) / 3 - 1;
+            newVertices.push_back(getPointAbscissa(vertices, index));
+            newVertices.push_back(getPointOrdinate(vertices, index));
+            newVertices.push_back(getPointHeight(vertices, index));
+            index = nextIndex++;
         }
     }
     vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
