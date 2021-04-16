@@ -272,9 +272,9 @@ static void subdivideParallelepiped(const vector<float> &parallelepiped, vector<
         downRightCornerZ = parallelepiped[11] - (parallelepiped[11] - parallelepiped[23]) * (float) i / 3.0f;
 
         vector<float> quadrilateral = {
-                upLeftCornerX, upLeftCornerY, upLeftCornerZ,
-                upRightCornerX, upRightCornerY, upRightCornerZ,
-                downLeftCornerX, downLeftCornerY, downLeftCornerZ,
+                upLeftCornerX,    upLeftCornerY,    upLeftCornerZ,
+                upRightCornerX,   upRightCornerY,   upRightCornerZ,
+                downLeftCornerX,  downLeftCornerY,  downLeftCornerZ,
                 downRightCornerX, downRightCornerY, downRightCornerZ,
         };
         subdivideQuadrilateral(quadrilateral, result);
@@ -394,7 +394,7 @@ static uint64_t getNumberOfVertices(uint8_t depth) {
 
 void duplicateVertices(vector<float> &vertices, vector<uint32_t> &indices) {
     vector<float> newVertices;
-    unsigned int maxIndex = *max_element(indices.begin(), indices.end());
+    uint32_t maxIndex = *max_element(indices.begin(), indices.end());
 
     map<uint32_t, uint8_t> count;
     for (uint32_t &index: indices) {

@@ -9,6 +9,8 @@
 #include <iostream>
 #include <vector>
 
+#include "../headers/shader.h"
+
 using namespace std;
 
 /**
@@ -35,7 +37,7 @@ private:
 
     GLFWwindow* window{};
     uint32_t program = 0;
-    uint32_t VAO[VAO_ID::NUMBER]{}, VBO[VAO_ID::NUMBER]{}, NBO[VAO_ID::NUMBER]{}, IBO[VAO_ID::NUMBER]{};
+    uint32_t VAO[VAO_ID::NUMBER], VBO[VAO_ID::NUMBER], NBO[VAO_ID::NUMBER], IBO[VAO_ID::NUMBER]{};
     uint32_t numberIndices[VAO_ID::NUMBER]{};
 public:
     static int WIDTH;

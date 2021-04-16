@@ -1,5 +1,4 @@
 #include "../headers/Window.h"
-#include "../headers/shader.h"
 
 using namespace std;
 
@@ -44,7 +43,6 @@ void Window::initOpenGL() {
     
     /* Enable some opengl capacities */
     enableBlending();
-    enableFaceCulling();
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_LINE_SMOOTH);
     glLineWidth(4);
@@ -102,7 +100,7 @@ void Window::loadUniformMat4f(const char* name, const glm::mat4 &mat) const {
 }
 
 void Window::loadUniformVec4f(const char* name, const glm::vec4 &vec) const {
-    glUniformMatrix4fv(glGetUniformLocation(program, name), 1, GL_FALSE, glm::value_ptr(vec));
+    glUniform4fv(glGetUniformLocation(program, name), 1, glm::value_ptr(vec));
 }
 
 void Window::drawScene(VAO_ID ID) {
@@ -122,7 +120,7 @@ void Window::drawScene(VAO_ID ID) {
             // Push model matrix to gpu through uniform
             loadUniformMat4f("model", model);
             // Draw vertices and create fragments with triangles
-            glDrawElements(GL_TRIANGLES, numberIndices[VAO_ID::CUBE], GL_UNSIGNED_INT, nullptr);
+            glDrawElements(GL_TRIANGLES, numberIndices[ID], GL_UNSIGNED_INT, nullptr);
             break;
         }
         case VAO_ID::TRAPEZE: {
@@ -138,7 +136,7 @@ void Window::drawScene(VAO_ID ID) {
                 // Push model matrix to gpu through uniform
                 loadUniformMat4f("model", model);
                 // Draw vertices and create fragments with triangles
-                glDrawElements(GL_TRIANGLES, numberIndices[VAO_ID::TRAPEZE], GL_UNSIGNED_INT, nullptr);
+                glDrawElements(GL_TRIANGLES, numberIndices[ID], GL_UNSIGNED_INT, nullptr);
             }
             // up (y=1.0) and down (y=0.0) trapezes
             for (int8_t i = -1; i < 2; i += 2) {
@@ -149,12 +147,13 @@ void Window::drawScene(VAO_ID ID) {
                 // Push model matrix to gpu through uniform
                 loadUniformMat4f("model", model);
                 // Draw vertices and create fragments with triangles
-                glDrawElements(GL_TRIANGLES, numberIndices[VAO_ID::TRAPEZE], GL_UNSIGNED_INT, nullptr);
+                glDrawElements(GL_TRIANGLES, numberIndices[ID], GL_UNSIGNED_INT, nullptr);
             }
             break;
         }
         default: cout << "Unknown VAO_ID = " << ID << endl;
     }
+    glBindVertexArray(0);
 }
 
 /**
@@ -185,7 +184,7 @@ void Window::disableDepthTest() {
  * Enable culling of faces pointing in the wrong direction
  */
 void Window::enableFaceCulling() {
-    glDisable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     glCullFace(GL_CCW);
 }
 

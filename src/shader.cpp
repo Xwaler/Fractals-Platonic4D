@@ -13,7 +13,7 @@ std::string readShaderFile(const char* file) {
     return vShaderStream.str();
 }
 
-void checkCompileErrors(unsigned int shader, const std::string& type) {
+void checkCompileErrors(uint32_t shader, const std::string& type) {
     int success;
     char infoLog[1024];
     if (type != "PROGRAM") {
@@ -45,7 +45,7 @@ void initProgram(uint32_t ID, const char* vShader, const char* fShader) {
     std::string fragmentCode = readShaderFile(fShader);
     const char* fShaderCode = fragmentCode.c_str();
 
-    unsigned int vertex = glCreateShader(GL_VERTEX_SHADER), fragment = glCreateShader(GL_FRAGMENT_SHADER);
+    uint32_t vertex = glCreateShader(GL_VERTEX_SHADER), fragment = glCreateShader(GL_FRAGMENT_SHADER);
     createShader(vertex, vShaderCode, "VERTEX");
     createShader(fragment, fShaderCode, "FRAGMENT");
 
