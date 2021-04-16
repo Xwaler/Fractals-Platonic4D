@@ -42,7 +42,7 @@ void Window::render() {
         loadUniformMat4f("projection", projection);
 
         /* Set and push vertices color to the gpu through uniform */
-        glm::vec4 color = glm::vec4(0.5f, 0.5f, 0.5f, 0.7f);
+        glm::vec4 color = glm::vec4(0.5f, 0.5f, 0.5f, 0.8f);
         loadUniformVec4f("color", color);
         /* Draw the scene from the trapeze vertex array */
         drawScene(VAO_ID::TRAPEZE);
@@ -123,8 +123,10 @@ void Window::createArraysAndBuffers() {
 void Window::fillVertexArray(VAO_ID ID) {
     /* Generate Menger's Sponge vertices and indices */
     sponge.subdivide(3, points[ID], vertices[ID], indices[ID]);
+    cout << "VAO[" << ID << "]: subdivided to " << vertices[ID].size() << " vertices and " << indices[ID].size() << " indices" << endl;
     /* Duplicate vertices used by many "sides" to allow calculation of independent vertices normals */
     Sponge::duplicateVertices(vertices[ID], indices[ID]);
+    cout << "VAO[" << ID << "]: duplicated to " << vertices[ID].size() << " vertices" << endl;
     /* Compute said normals */
     Sponge::computeSpongeNormals(vertices[ID], indices[ID], normals[ID]);
 
