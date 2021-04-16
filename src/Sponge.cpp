@@ -196,9 +196,7 @@ void Sponge::subdivideLine(const vector<float> &line, vector<float> &result) {
     addPointOneThirdOfTheWayToVector(result, line, 0, 1);
 
     /* Add a point two thirds of the way between the two points that describe the line */
-    result.push_back(getPointAbscissa(line, 0) - (getPointAbscissa(line, 0) - getPointAbscissa(line, 1)) * 2.0f / 3.0f);
-    result.push_back(getPointOrdinate(line, 0) - (getPointOrdinate(line, 0) - getPointOrdinate(line, 1)) * 2.0f / 3.0f);
-    result.push_back(getPointHeight(line, 0) - (getPointHeight(line, 0) - getPointHeight(line, 1)) * 2.0f / 3.0f);
+    addPointOneThirdOfTheWayToVector(result, line, 1, 0);
 
     /* Add the end of the line to the result vector */
     addPointToVector(result, line, 1);
@@ -213,22 +211,34 @@ void Sponge::subdivideQuadrilateral(const vector<float> &quadrilateral, vector<f
 
     /* Create two lines between the chosen side and its opposite.
      * Those lines are parallels and equidistant */
-    for (uint8_t i = 1; i < 3; ++i) {
+    {
         float startOfLineX, startOfLineY, startOfLineZ;
-        startOfLineX = getPointAbscissa(quadrilateral, 0) -
-                       (getPointAbscissa(quadrilateral, 0) - getPointAbscissa(quadrilateral, 2)) * (float) i / 3.0f;
-        startOfLineY = getPointOrdinate(quadrilateral, 0) -
-                       (getPointOrdinate(quadrilateral, 0) - getPointOrdinate(quadrilateral, 2)) * (float) i / 3.0f;
-        startOfLineZ = getPointHeight(quadrilateral, 0) -
-                       (getPointHeight(quadrilateral, 0) - getPointHeight(quadrilateral, 2)) * (float) i / 3.0f;
+        startOfLineX = getCoordinateOneThirdOfTheWay(getPointAbscissa(quadrilateral, 0), getPointAbscissa(quadrilateral, 2));
+        startOfLineY = getCoordinateOneThirdOfTheWay(getPointOrdinate(quadrilateral, 0), getPointOrdinate(quadrilateral, 2));
+        startOfLineZ = getCoordinateOneThirdOfTheWay(getPointHeight(quadrilateral, 0), getPointHeight(quadrilateral, 2));
 
         float endOfLineX, endOfLineY, endOfLineZ;
-        endOfLineX = getPointAbscissa(quadrilateral, 1) -
-                     (getPointAbscissa(quadrilateral, 1) - getPointAbscissa(quadrilateral, 3)) * (float) i / 3.0f;
-        endOfLineY = getPointOrdinate(quadrilateral, 1) -
-                     (getPointOrdinate(quadrilateral, 1) - getPointOrdinate(quadrilateral, 3)) * (float) i / 3.0f;
-        endOfLineZ = getPointHeight(quadrilateral, 1) -
-                     (getPointHeight(quadrilateral, 1) - getPointHeight(quadrilateral, 3)) * (float) i / 3.0f;
+        endOfLineX = getCoordinateOneThirdOfTheWay(getPointAbscissa(quadrilateral, 1), getPointAbscissa(quadrilateral, 3));
+        endOfLineY = getCoordinateOneThirdOfTheWay(getPointOrdinate(quadrilateral, 1), getPointOrdinate(quadrilateral, 3));
+        endOfLineZ = getCoordinateOneThirdOfTheWay(getPointHeight(quadrilateral, 1), getPointHeight(quadrilateral, 3));
+
+        vector<float> line = {
+                startOfLineX, startOfLineY, startOfLineZ,
+                endOfLineX, endOfLineY, endOfLineZ,
+        };
+        subdivideLine(line, result);
+    }
+
+    {
+        float startOfLineX, startOfLineY, startOfLineZ;
+        startOfLineX = getCoordinateOneThirdOfTheWay(getPointAbscissa(quadrilateral, 2), getPointAbscissa(quadrilateral, 0));
+        startOfLineY = getCoordinateOneThirdOfTheWay(getPointOrdinate(quadrilateral, 2), getPointOrdinate(quadrilateral, 0));
+        startOfLineZ = getCoordinateOneThirdOfTheWay(getPointHeight(quadrilateral, 2), getPointHeight(quadrilateral, 0));
+
+        float endOfLineX, endOfLineY, endOfLineZ;
+        endOfLineX = getCoordinateOneThirdOfTheWay(getPointAbscissa(quadrilateral, 3), getPointAbscissa(quadrilateral, 1));
+        endOfLineY = getCoordinateOneThirdOfTheWay(getPointOrdinate(quadrilateral, 3), getPointOrdinate(quadrilateral, 1));
+        endOfLineZ = getCoordinateOneThirdOfTheWay(getPointHeight(quadrilateral, 3), getPointHeight(quadrilateral, 1));
 
         vector<float> line = {
                 startOfLineX, startOfLineY, startOfLineZ,
