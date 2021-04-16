@@ -322,11 +322,8 @@ void recursiveSubdivide(uint8_t depth, const vector<float> &parallelepiped, vect
         recursiveSubdivide(depth - 1, childParallelepiped, vertices, indices, childApparentFaces);
     } else {
         subdivideParallelepiped(parallelepiped, vertices);
-        std::cout << ":)" << std::endl;
         addFaces(vertices.size(), indices, apparentFaces);
     }
-
-    std::cout << vertices.size() << std::endl;
 }
 
 
@@ -347,8 +344,6 @@ void subdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float>
                vector<uint32_t> &indices) {
     vector<Faces> apparentFaces = {Front, Top, Right, Bottom, Left, Back};
     recursiveSubdivide(depth, parallelepiped, vertices, indices, apparentFaces);
-
-
 }
 
 void computeSpongeNormals(const vector<float> &vertices, const vector<uint32_t> &indices, vector<float> &normals) {
@@ -394,7 +389,7 @@ static uint64_t getNumberOfVertices(uint8_t depth) {
 
 void duplicateVertices(vector<float> &vertices, vector<uint32_t> &indices) {
     vector<float> newVertices;
-    uint32_t maxIndex = *max_element(indices.begin(), indices.end());
+    //uint32_t maxIndex = *max_element(indices.begin(), indices.end());
 
     map<uint32_t, uint8_t> count;
     for (uint32_t &index: indices) {
@@ -404,7 +399,8 @@ void duplicateVertices(vector<float> &vertices, vector<uint32_t> &indices) {
             newVertices.push_back(vertices[3 * index]);
             newVertices.push_back(vertices[3 * index + 1]);
             newVertices.push_back(vertices[3 * index + 2]);
-            index = ++maxIndex;
+            //index = ++maxIndex;
+            index = (vertices.size() + newVertices.size()) / 3 - 1;
         }
     }
     vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
