@@ -10,6 +10,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <time.h>
 
 #include "Sponge.h"
 
@@ -44,6 +45,7 @@ private:
     float horizontal_angle = 0.0f;
     float vertical_angle = 0.0f;
 
+    int8_t targetFPS = 60;
     double deltaTime = 0.0f;
     double lastFrame = 0.0f;
 
@@ -128,6 +130,11 @@ private:
      * Update the screen to reflect changes
      */
     void blit();
+
+    /**
+     * Sleeps to limit framerate
+     */
+    void waitNextFrame() const;
 
     /**
      * Gives window status

@@ -155,17 +155,17 @@ void Sponge::duplicateVertices(vector<float> &vertices, vector<uint32_t> &indice
     vector<float> newVertices;
     uint32_t nextIndex = vertices.size() / 3;
 
-    map<uint32_t, uint8_t> count;
+    vector<uint8_t> count(indices.size(), 0);
     for (uint32_t &index: indices) {
-        if (count.find(index) == count.end()) count[index] = 1;
-        else {
-            ++count[index];
+        ++count[index];
+        if (count[index] > 1) {
             newVertices.push_back(getPointAbscissa(vertices, index));
             newVertices.push_back(getPointOrdinate(vertices, index));
             newVertices.push_back(getPointHeight(vertices, index));
             index = nextIndex++;
         }
     }
+    vertices.reserve(vertices.size() + newVertices.size());
     vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
 }
 

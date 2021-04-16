@@ -63,6 +63,9 @@ void Window::renderMengerSpongeLikeHypercube() {
 
         /* Swap the framebuffer to apply changes onto the screen */
         blit();
+
+        /* Limit framerate */
+        waitNextFrame();
     }
 }
 
@@ -451,6 +454,17 @@ void Window::blit() {
     glfwSwapBuffers(window);
     /* Call input event callbacks */
     glfwPollEvents();
+}
+
+/**
+ * Sleeps to limit framerate
+ */
+void Window::waitNextFrame() const {
+    long toWait = (long) (1000000000.0 * ((1.0 / (double) targetFPS) - deltaTime));
+    if (toWait > 0L) {
+        const struct timespec time = (timespec){0, toWait};
+        nanosleep(&time, nullptr);
+    }
 }
 
 /**
