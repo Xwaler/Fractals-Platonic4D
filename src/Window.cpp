@@ -9,6 +9,56 @@ double Window::scroll_speed = 0.2;
 bool Window::leftButtonPressed = false;
 bool Window::wireframe = false;
 
+Window::Window() {
+    initOpenGL();
+    loadShaders();
+    createArraysAndBuffers();
+
+    points[VAO_ID::CUBE] = {
+            0.0f, 0.0f, 0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,
+    };
+    fillVertexArray(VAO_ID::CUBE);
+    points[VAO_ID::TRAPEZE] = {
+            0.00f, 0.00f, 0.00f,  1.00f, 0.00f, 0.00f,  0.00f, 1.00f, 0.00f,  1.00f, 1.00f, 0.00f,
+            0.25f, 0.25f, 0.25f,  0.75f, 0.25f, 0.25f,  0.25f, 0.75f, 0.25f,  0.75f, 0.75f, 0.25f,
+    };
+    fillVertexArray(VAO_ID::TRAPEZE);
+}
+
+void Window::render() {
+    /* RENDER LOOP */
+    while (continueLoop()) {
+        /* Draw the background and clear OpenGL render bits */
+        Window::clear();
+
+        /* Update the camera position based on mouse movements */
+        glm::vec3 cameraPosition = updateCamera();
+
+        /* Initialize view matrix from camera and perspective projection matrix */
+        glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0, 1.0f, 0.0f));
+        glm::mat4 projection = glm::perspective(glm::pi<float>() / 4.0f, (float) WIDTH / (float) HEIGHT, 0.1f, 100.0f);
+        /* Push view and projection matrix to the gpu through uniforms */
+        loadUniformMat4f("view", view);
+        loadUniformMat4f("projection", projection);
+
+        /* Set and push vertices color to the gpu through uniform */
+        glm::vec4 color = glm::vec4(0.5f, 0.5f, 0.5f, 0.7f);
+        loadUniformVec4f("color", color);
+        /* Draw the scene from the trapeze vertex array */
+        drawScene(VAO_ID::TRAPEZE);
+
+        /* Set and push vertices color to the gpu through uniform */
+        color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+        loadUniformVec4f("color", color);
+        /* Draw the scene from the cube vertex array */
+        drawScene(VAO_ID::CUBE);
+
+        /* Swap the framebuffer to apply changes onto the screen */
+        blit();
+    }
+}
+
 /**
  * Initialize OpenGL, glfw and glad
  * @return 
@@ -43,6 +93,7 @@ void Window::initOpenGL() {
     
     /* Enable some opengl capacities */
     enableBlending();
+    enableFaceCulling();
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_LINE_SMOOTH);
     glLineWidth(4);
@@ -70,29 +121,35 @@ void Window::createArraysAndBuffers() {
     glGenBuffers(VAO_ID::NUMBER, IBO);
 }
 
-void Window::fillVertexArray(VAO_ID ID, vector<float> &vertices, vector<float> &normals, vector<uint32_t> &indices) {
+void Window::fillVertexArray(VAO_ID ID) {
+    /* Generate Menger's Sponge vertices and indices */
+    subdivide(3, points[ID], vertices[ID], indices[ID]);
+    /* Duplicate vertices used by many "sides" to allow calculation of independent vertices normals */
+    duplicateVertices(vertices[ID], indices[ID]);
+    /* Compute said normals */
+    computeSpongeNormals(vertices[ID], indices[ID], normals[ID]);
+
+    /* Load vertices, normals and indices to buffers */
     /* Bind wanted vertex array */
     glBindVertexArray(VAO[ID]);
     /* Bind vertex buffer to vertex array */
     glBindBuffer(GL_ARRAY_BUFFER, VBO[ID]);
     /* Buffer vertices to vertex buffer */
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices[ID].size() * sizeof(float), vertices[ID].data(), GL_STATIC_DRAW);
     /* Assign the buffer content to vertex array pointer 0 */
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
     glEnableVertexAttribArray(0);
     /* Bind normals buffer to vertex array */
     glBindBuffer(GL_ARRAY_BUFFER, NBO[ID]);
     /* Buffer normals to normal buffer */
-    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float), normals.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, normals[ID].size() * sizeof(float), normals[ID].data(), GL_STATIC_DRAW);
     /* Assign the buffer content to vertex array pointer 1 */
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
     glEnableVertexAttribArray(1);
     /* Bind indices buffer to vertex array */
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[ID]);
-    /* Save indices size for latter use */
-    numberIndices[ID] = indices.size();
     /* Buffer indices to vertex buffer */
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, numberIndices[ID] * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices[ID].size() * sizeof(uint32_t), indices[ID].data(), GL_STATIC_DRAW);
 }
 
 void Window::loadUniformMat4f(const char* name, const glm::mat4 &mat) const {
@@ -120,7 +177,7 @@ void Window::drawScene(VAO_ID ID) {
             // Push model matrix to gpu through uniform
             loadUniformMat4f("model", model);
             // Draw vertices and create fragments with triangles
-            glDrawElements(GL_TRIANGLES, numberIndices[ID], GL_UNSIGNED_INT, nullptr);
+            glDrawElements(GL_TRIANGLES, indices[ID].size(), GL_UNSIGNED_INT, nullptr);
             break;
         }
         case VAO_ID::TRAPEZE: {
@@ -136,7 +193,7 @@ void Window::drawScene(VAO_ID ID) {
                 // Push model matrix to gpu through uniform
                 loadUniformMat4f("model", model);
                 // Draw vertices and create fragments with triangles
-                glDrawElements(GL_TRIANGLES, numberIndices[ID], GL_UNSIGNED_INT, nullptr);
+                glDrawElements(GL_TRIANGLES, indices[ID].size(), GL_UNSIGNED_INT, nullptr);
             }
             // up (y=1.0) and down (y=0.0) trapezes
             for (int8_t i = -1; i < 2; i += 2) {
@@ -147,7 +204,7 @@ void Window::drawScene(VAO_ID ID) {
                 // Push model matrix to gpu through uniform
                 loadUniformMat4f("model", model);
                 // Draw vertices and create fragments with triangles
-                glDrawElements(GL_TRIANGLES, numberIndices[ID], GL_UNSIGNED_INT, nullptr);
+                glDrawElements(GL_TRIANGLES, indices[ID].size(), GL_UNSIGNED_INT, nullptr);
             }
             break;
         }
@@ -224,6 +281,7 @@ glm::vec3 Window::updateCamera() {
 void Window::framebuffer_size_callback(GLFWwindow* w, int width, int height) {
     WIDTH = width;
     HEIGHT = height;
+    glViewport(0, 0, WIDTH, HEIGHT);
 }
 
 /**
