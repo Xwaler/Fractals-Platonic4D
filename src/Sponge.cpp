@@ -7,9 +7,9 @@ Sponge::Sponge(){
                          4,  3,  7,
                          4,  5,  8,
                          8,  5,  9,
-                         6,  7, 10,
-                         10,  7, 11,
-                         8, 11, 12,
+                         6,  7,  10,
+                         10, 7,  11,
+                         8,  11, 12,
                          12, 11, 15};
 
     topFaceIndices = {48, 51, 32,
@@ -19,7 +19,7 @@ Sponge::Sponge(){
                       34, 35, 18,
                       18, 35, 19,
                       16, 19,  0,
-                      0, 19,  3};
+                      0,  19,  3};
 
     rightFaceIndices = { 3, 51,  7,
                          7, 51, 55,
@@ -60,14 +60,14 @@ Sponge::Sponge(){
     faceIndicesList = {&frontFaceIndices, &topFaceIndices, &rightFaceIndices, &bottomFaceIndices, &leftFaceIndices,
                        &backFaceIndices};
 
-    innerParts = { 5, 21,  9,
-                   9, 21, 25,
-                   9, 25, 10,
+    innerParts = { 5,  21,  9,
+                   9,  21, 25,
+                   9,  25, 10,
                    10, 25, 26,
                    10, 26,  6,
-                   6, 26, 22,
-                   6, 22,  5,
-                   5, 22, 21,
+                   6,  26, 22,
+                   6,  22,  5,
+                   5,  22, 21,
 
                    23, 22, 27,
                    27, 22, 26,
@@ -169,20 +169,22 @@ void Sponge::duplicateVertices(vector<float> &vertices, vector<uint32_t> &indice
     vertices.insert(vertices.end(), newVertices.begin(), newVertices.end());
 }
 
-void Sponge::addFace(uint64_t size, vector<uint32_t> &indices, Faces face){
+void Sponge::addFace(uint64_t shift, vector<uint32_t> &indices, Faces face) {
+    /* Add the list of vertices needed to describe the requested face to the indices list
+     * (a shift needs to be applied to compensate for the indices vector not being empty) */
     for (uint8_t index : *(faceIndicesList[face])) {
-        indices.push_back(index + (size - 192) / 3);
+        indices.push_back(index + shift);
     }
 }
 
-void Sponge::addFaces(uint64_t size, vector<uint32_t> &indices, const vector<Faces> &apparentFaces){
-    if (!apparentFaces.empty()) {
-        for (Faces face : apparentFaces) {
-            addFace(size, indices, face);
-        }
+void Sponge::addFaces(uint64_t shift, vector<uint32_t> &indices, const vector<Faces> &apparentFaces) {
+    for (Faces face : apparentFaces) {
+        addFace(shift, indices, face);
     }
+
+    /* Add the tube made apparent by the holes of the sponge */
     for (uint8_t index : innerParts) {
-        indices.push_back(index + (size - 192) / 3);
+        indices.push_back(index + shift);
     }
 }
 
@@ -191,9 +193,7 @@ void Sponge::subdivideLine(const vector<float> &line, vector<float> &result) {
     addPointToVector(result, line, 0);
 
     /* Add a point one third of the way between the two points that describe the line */
-    result.push_back(getPointAbscissa(line, 0) - (getPointAbscissa(line, 0) - getPointAbscissa(line, 1)) / 3.0f);
-    result.push_back(getPointOrdinate(line, 0) - (getPointOrdinate(line, 0) - getPointOrdinate(line, 1)) / 3.0f);
-    result.push_back(getPointHeight(line, 0) - (getPointHeight(line, 0) - getPointHeight(line, 1)) / 3.0f);
+    addPointOneThirdOfTheWayToVector(result, line, 0, 1);
 
     /* Add a point two thirds of the way between the two points that describe the line */
     result.push_back(getPointAbscissa(line, 0) - (getPointAbscissa(line, 0) - getPointAbscissa(line, 1)) * 2.0f / 3.0f);
@@ -291,14 +291,14 @@ void Sponge::subdivideParallelepiped(const vector<float> &parallelepiped, vector
 }
 
 void Sponge::subdivideChild(uint8_t depth, vector<float> &vertices, vector<uint32_t> &indices,
-                            const vector<float> &subdivisionResult, const vector<uint8_t> &childIndices,
+                            const vector<float> &parentVertices, const vector<uint8_t> &childIndices,
                             const vector<Faces> &parentApparentFaces, const vector<Faces> &childPossiblyApparentFaces,
                             const vector<Faces> &childMandatoryFaces) {
 
     /* Extract the child parallelepiped */
     vector<float> childParallelepiped;
     for (uint8_t index : childIndices) {
-        addPointToVector(childParallelepiped, subdivisionResult, index);
+        addPointToVector(childParallelepiped, parentVertices, index);
     }
 
     /* Indicate which faces could be worth drawing */
@@ -506,7 +506,7 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
 
     } else {
         subdivideParallelepiped(parallelepiped, vertices);
-        addFaces(vertices.size(), indices, parentApparentFaces);
+        addFaces((vertices.size() - 192) / 3, indices, parentApparentFaces);
     }
 }
 

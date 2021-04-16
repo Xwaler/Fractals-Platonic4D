@@ -17,5 +17,10 @@ float getPointOrdinate(const vector<float> &sourceVector, uint32_t pointIndex);
 
 float getPointHeight(const vector<float> &sourceVector, uint32_t pointIndex);
 
+float getCoordinateOneThirdOfTheWay(float closest, float furthest);
+
+vector<float> &addPointOneThirdOfTheWayToVector(vector<float> &targetVector, const vector<float> &sourceVector,
+                                                uint32_t closestPointIndex, uint32_t furthestPointIndex);
+
 vector<float> &addPointToVector(vector<float> &targetVector, const vector<float> &sourceVector, uint32_t pointIndex);
 #endif //FRACTALS_PLATONIC4D_VECTORTOOLS_H
