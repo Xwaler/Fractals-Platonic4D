@@ -118,8 +118,8 @@ void Window::createOverlayTexture() {
     /* Buffer vertices to vertex buffer */
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices[VAO_ID::OVERLAY].size() * sizeof(float), indices[VAO_ID::OVERLAY].data(), GL_STATIC_DRAW);
 
-    /* Select shader texture 0 */
-    glActiveTexture(GL_TEXTURE0);
+    /* Select shader texture ID */
+    glActiveTexture(GL_TEXTURE0 + TEXTURE_ID::OVERLAY_TEXTURE);
     /* Binds our texture for parametrisation */
     glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_ID::OVERLAY_TEXTURE]);
     /* Set texture base parameters */
@@ -364,16 +364,16 @@ void Window::drawOverlay() {
     /* Disable face culling to avoid overlay disappearance based on camera position */
     disableFaceCulling();
 
-    /* Bind our texture and fill it with the image data */
-    glActiveTexture(GL_TEXTURE0);
+    /* Activate our texture ID and fill it with the image data */
+    glActiveTexture(GL_TEXTURE0 + TEXTURE_ID::OVERLAY_TEXTURE);
     glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_ID::OVERLAY_TEXTURE]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
 
     /* Setup orthonormal projection matrix */
     glm::mat4 projection = glm::ortho(0, 1, 1, 0, -1, 1);
     loadUniformMat4f(programTexture, "projection", projection);
-    /* Bind the shader to texture ID 0 */
-    loadUniform1f(programTexture, "overlayTexture", 0);
+    /* Bind our texture ID to the shader */
+    loadUniform1f(programTexture, "overlayTexture", TEXTURE_ID::OVERLAY_TEXTURE);
     glDrawElements(GL_TRIANGLES, indices[VAO_ID::OVERLAY].size(), GL_UNSIGNED_INT, nullptr);
 
     enableFaceCulling();
