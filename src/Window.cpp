@@ -11,8 +11,18 @@ bool Window::wireframe = false;
 
 Window::Window() : sponge(){
     initOpenGL();
-    loadShaders();
+    loadMainShaders();
+    loadOverlayShaders();
     createArraysAndBuffers();
+    createOverlayTexture();
+
+    /* Overlay example */
+    vector<float> test(WIDTH * HEIGHT * 4, 0.0f);
+    for (uint32_t i = 0; i < WIDTH; ++i) {
+        test[4 * (50 * WIDTH + i)] = i / (float) WIDTH; // PROGRESSIVE RED
+        test[4 * (50 * WIDTH + i) + 3] = 0.7f; // ALPHA
+    }
+    setOverlayArray(test);
 }
 
 /**
@@ -23,12 +33,13 @@ void Window::createMengerSpongeLikeHypercube() {
             0.0f, 0.0f, 0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f, 0.0f,
             0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,
     };
-    fillVertexArray(VAO_ID::CUBE);
+    fillSpongeVertexArray(VAO_ID::CUBE);
     points[VAO_ID::TRAPEZE] = {
             0.00f, 0.00f, 0.00f,  1.00f, 0.00f, 0.00f,  0.00f, 1.00f, 0.00f,  1.00f, 1.00f, 0.00f,
             0.25f, 0.25f, 0.25f,  0.75f, 0.25f, 0.25f,  0.25f, 0.75f, 0.25f,  0.75f, 0.75f, 0.25f,
     };
-    fillVertexArray(VAO_ID::TRAPEZE);
+    fillSpongeVertexArray(VAO_ID::TRAPEZE);
+    prepareBackToFrontDrawing();
 }
 
 /**
@@ -40,26 +51,29 @@ void Window::renderMengerSpongeLikeHypercube() {
         clear();
 
         /* Update the camera position based on mouse movements */
-        glm::vec3 cameraPosition = updateCamera();
+        updateCamera();
 
         /* Initialize view matrix from camera and perspective projection matrix */
         glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0, 1.0f, 0.0f));
         glm::mat4 projection = glm::perspective(glm::pi<float>() / 4.0f, (float) WIDTH / (float) HEIGHT, 0.1f, 100.0f);
         /* Push view and projection matrix to the gpu through uniforms */
-        loadUniformMat4f("view", view);
-        loadUniformMat4f("projection", projection);
+        loadUniformMat4f(programMain, "view", view);
+        loadUniformMat4f(programMain, "projection", projection);
 
         /* Set and push vertices color to the gpu through uniform */
         glm::vec4 color = glm::vec4(0.5f, 0.5f, 0.5f, 0.8f);
-        loadUniformVec4f("color", color);
+        loadUniformVec4f(programMain, "color", color);
         /* Draw the scene from the trapeze vertex array */
         drawScene(VAO_ID::TRAPEZE);
 
         /* Set and push vertices color to the gpu through uniform */
         color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-        loadUniformVec4f("color", color);
+        loadUniformVec4f(programMain, "color", color);
         /* Draw the scene from the cube vertex array */
         drawScene(VAO_ID::CUBE);
+
+        /* Draw overlay over the viewport */
+        drawOverlay();
 
         /* Swap the framebuffer to apply changes onto the screen */
         blit();
@@ -67,6 +81,54 @@ void Window::renderMengerSpongeLikeHypercube() {
         /* Limit framerate */
         waitNextFrame();
     }
+}
+
+/**
+ * Update the overlay image
+ * @param array of size (W * H * 4)
+ */
+void Window::setOverlayArray(vector<float> &array) {
+    textureArrays[TEXTURE_ID::OVERLAY_TEXTURE] = array;
+}
+
+/**
+ * Initialize overlay texture buffer and position vertices
+ */
+void Window::createOverlayTexture() {
+    glBindVertexArray(VAO[VAO_ID::OVERLAY]);
+    vertices[VAO_ID::OVERLAY] = {
+            0.0f, 0.0f,
+            1.0f, 0.0f,
+            0.0f, 1.0f,
+            1.0f, 1.0f,
+    };
+    indices[VAO_ID::OVERLAY] = {
+            0, 1, 2,
+            2, 1, 3,
+    };
+    /* Bind vertex buffer to vertex array */
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[VAO_ID::OVERLAY]);
+    /* Buffer vertices to vertex buffer */
+    glBufferData(GL_ARRAY_BUFFER, vertices[VAO_ID::OVERLAY].size() * sizeof(float), vertices[VAO_ID::OVERLAY].data(), GL_STATIC_DRAW);
+    /* Assign the buffer content to vertex array pointer 0 */
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
+    glEnableVertexAttribArray(0);
+    /* Bind vertex buffer to vertex array */
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[VAO_ID::OVERLAY]);
+    /* Buffer vertices to vertex buffer */
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices[VAO_ID::OVERLAY].size() * sizeof(float), indices[VAO_ID::OVERLAY].data(), GL_STATIC_DRAW);
+
+    /* Select shader texture 0 */
+    glActiveTexture(GL_TEXTURE0);
+    /* Binds our texture for parametrisation */
+    glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_ID::OVERLAY_TEXTURE]);
+    /* Set texture base parameters */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    /* Initialize texture image to empty (black) and transparent */
+    textureArrays[TEXTURE_ID::OVERLAY_TEXTURE] = vector<float>(WIDTH * HEIGHT * 4, 0.0f);
+    /* Fill the texture with image to preallocate space */
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
 }
 
 /**
@@ -104,6 +166,7 @@ void Window::initOpenGL() {
     /* Enable some opengl capacities */
     enableBlending();
     enableFaceCulling();
+    glEnable(GL_TEXTURE_2D);
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_LINE_SMOOTH);
     glLineWidth(4);
@@ -118,11 +181,19 @@ bool Window::continueLoop() {
 }
 
 /**
- * Reads and compile shaders then adds them to the program
+ * Reads and compile shaders for 3D then adds them to the program
  */
-void Window::loadShaders() {
-    program = glCreateProgram();
-    initProgram("../shaders/vShader.glsl", "../shaders/fShader.glsl");
+void Window::loadMainShaders() {
+    programMain = glCreateProgram();
+    initProgram(programMain, "../shaders/vShader.glsl", "../shaders/fShader.glsl");
+}
+
+/**
+ * Reads and compile shaders for 2D textures then adds them to the program
+ */
+void Window::loadOverlayShaders() {
+    programTexture = glCreateProgram();
+    initProgram(programTexture, "../shaders/vOverlayShader.glsl", "../shaders/fOverlayShader.glsl");
 }
 
 /**
@@ -133,6 +204,7 @@ void Window::createArraysAndBuffers() {
     glGenBuffers(VAO_ID::NUMBER, VBO);
     glGenBuffers(VAO_ID::NUMBER, NBO);
     glGenBuffers(VAO_ID::NUMBER, IBO);
+    glGenTextures(TEXTURE_ID::NUMBER_TEXTURE, textures);
 }
 
 /**
@@ -140,7 +212,7 @@ void Window::createArraysAndBuffers() {
  * and create pointers to those memory spaces for shaders to access them
  * @param ID of the VAO used to store the data
  */
-void Window::fillVertexArray(VAO_ID ID) {
+void Window::fillSpongeVertexArray(VAO_ID ID) {
     /* Generate Menger's Sponge vertices and indices */
     sponge.subdivide(3, points[ID], vertices[ID], indices[ID]);
     cout << "VAO[" << ID << "]: subdivided to " << vertices[ID].size() << " vertices and " << indices[ID].size() << " indices" << endl;
@@ -149,6 +221,7 @@ void Window::fillVertexArray(VAO_ID ID) {
     cout << "VAO[" << ID << "]: duplicated to " << vertices[ID].size() << " vertices" << endl;
     /* Compute said normals */
     Sponge::computeSpongeNormals(vertices[ID], indices[ID], normals[ID]);
+    cout << "VAO[" << ID << "]: computed " << normals[ID].size() << " normals" << endl;
 
     /* Load vertices, normals and indices to buffers */
     /* Bind wanted vertex array */
@@ -178,7 +251,7 @@ void Window::fillVertexArray(VAO_ID ID) {
  * @param name of the uniform in the shader
  * @param mat to send
  */
-void Window::loadUniformMat4f(const char* name, const glm::mat4 &mat) const {
+void Window::loadUniformMat4f(uint32_t program, const char* name, const glm::mat4 &mat) {
     glUniformMatrix4fv(glGetUniformLocation(program, name), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
@@ -187,8 +260,36 @@ void Window::loadUniformMat4f(const char* name, const glm::mat4 &mat) const {
  * @param name of the uniform in the shader
  * @param vec to send
  */
-void Window::loadUniformVec4f(const char* name, const glm::vec4 &vec) const {
+void Window::loadUniformVec4f(uint32_t program, const char *name, const glm::vec4 &vec) {
     glUniform4fv(glGetUniformLocation(program, name), 1, glm::value_ptr(vec));
+}
+
+/**
+ * Sends a float to a GPU uniform
+ * @param name of the uniform in the shader
+ * @param vec to send
+ */
+void Window::loadUniform1f(uint32_t program, const char *name, float value) {
+    glUniform1f(glGetUniformLocation(program, name), value);
+}
+
+/**
+ * Initialize the faces position vector used to determine those closest to the camera
+ */
+void Window::prepareBackToFrontDrawing() {
+    glm::vec4 center(0.5f, 0.5f, 0.125f, 1.0f);
+    for (uint8_t i = 0; i < 4; ++i) {
+        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), (float) i * glm::pi<float>() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f)) *
+                                   glm::translate(glm::mat4(1), glm::vec3(-0.5));
+        transparentSidesModelMatrix.push_back(rotationMatrix);
+        transparentSidesPosition.emplace_back(rotationMatrix * center);
+    }
+    for (int8_t i = -1; i < 2; i += 2) {
+        glm::mat4 modelMatrix = glm::rotate(glm::mat4(1.0f), (float) i * glm::pi<float>() / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)) *
+                                glm::translate(glm::mat4(1), glm::vec3(-0.5));
+        transparentSidesModelMatrix.push_back(modelMatrix);
+        transparentSidesPosition.emplace_back(modelMatrix * center);
+    }
 }
 
 /**
@@ -198,7 +299,7 @@ void Window::loadUniformVec4f(const char* name, const glm::vec4 &vec) const {
 void Window::drawScene(VAO_ID ID) {
     /* Bind the trapeze vertex array object */
     glBindVertexArray(VAO[ID]);
-    glUseProgram(program);
+    glUseProgram(programMain);
 
     switch (ID) {
         case VAO_ID::CUBE: {
@@ -210,34 +311,40 @@ void Window::drawScene(VAO_ID ID) {
                     glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)) *
                     glm::translate(glm::mat4(1), glm::vec3(-0.5));
             // Push model matrix to gpu through uniform
-            loadUniformMat4f("model", model);
+            loadUniformMat4f(programMain, "model", model);
             // Draw vertices and create fragments with triangles
             glDrawElements(GL_TRIANGLES, indices[ID].size(), GL_UNSIGNED_INT, nullptr);
             break;
         }
         case VAO_ID::TRAPEZE: {
-            // Disable depth test for transparency
+            /* Disable depth test for transparency */
             disableDepthTest();
 
-            // Four inline trapezes (with y=0.5)
-            for (uint8_t i = 0; i < 4; ++i) {
-                // Compute model matrix for one trapeze, translate to center the object then rotate it to the right side
-                glm::mat4 model =
-                        glm::rotate(glm::mat4(1.0f), (float) i * glm::pi<float>() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f)) *
-                        glm::translate(glm::mat4(1), glm::vec3(-0.5));
-                // Push model matrix to gpu through uniform
-                loadUniformMat4f("model", model);
-                // Draw vertices and create fragments with triangles
-                glDrawElements(GL_TRIANGLES, indices[ID].size(), GL_UNSIGNED_INT, nullptr);
+            /* Compute distances between each side and the camera */
+            vector<double> distance; vector<uint32_t> indexSortedDistance;
+            for (glm::vec3 sidePosition: transparentSidesPosition) {
+                distance.push_back(glm::length(cameraPosition - sidePosition));
             }
-            // up (y=1.0) and down (y=0.0) trapezes
-            for (int8_t i = -1; i < 2; i += 2) {
-                // Compute model matrix for one trapeze, translate to center the object then rotate it to the right side
-                glm::mat4 model =
-                        glm::rotate(glm::mat4(1.0f), (float) i * glm::pi<float>() / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)) *
-                        glm::translate(glm::mat4(1), glm::vec3(-0.5));
+            /* Initialize indices for synchronised sorting */
+            for (uint32_t i = 0; i < distance.size(); ++i) {
+                indexSortedDistance.push_back(i);
+            }
+            /* Sorts distances and indices together so that we can access our model matrices by index */
+            for (uint32_t i = 0; i < distance.size(); ++i) {
+                for (uint32_t j = i; j < distance.size(); ++j) {
+                    if (distance[i] < distance[j]) {
+                        double tmpDistance = distance[i]; uint32_t tmpIndex = indexSortedDistance[i];
+                        distance[i] = distance[j];
+                        distance[j] = tmpDistance;
+                        indexSortedDistance[i] = indexSortedDistance[j];
+                        indexSortedDistance[j] = tmpIndex;
+                    }
+                }
+            }
+            /* Draw the faces from back to front, following the sorted indices/distances */
+            for (uint32_t index: indexSortedDistance) {
                 // Push model matrix to gpu through uniform
-                loadUniformMat4f("model", model);
+                loadUniformMat4f(programMain, "model", transparentSidesModelMatrix[index]);
                 // Draw vertices and create fragments with triangles
                 glDrawElements(GL_TRIANGLES, indices[ID].size(), GL_UNSIGNED_INT, nullptr);
             }
@@ -245,7 +352,32 @@ void Window::drawScene(VAO_ID ID) {
         }
         default: cout << "Unknown VAO_ID = " << ID << endl;
     }
-    glBindVertexArray(0);
+}
+
+/**
+ * Draw the overlay texture to the viewport
+ */
+void Window::drawOverlay() {
+    /* Bind overlay vertex array and load overlay shader program */
+    glBindVertexArray(VAO[VAO_ID::OVERLAY]);
+    glUseProgram(programTexture);
+    /* Disable face culling to avoid overlay disappearance based on camera position */
+    disableFaceCulling();
+
+    /* Bind our texture and fill it with the image data */
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_ID::OVERLAY_TEXTURE]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
+
+    /* Setup orthonormal projection matrix */
+    glm::mat4 projection = glm::ortho(0, 1, 1, 0, -1, 1);
+    loadUniformMat4f(programTexture, "projection", projection);
+    /* Bind the shader to texture ID 0 */
+    loadUniform1f(programTexture, "overlayTexture", 0);
+    glDrawElements(GL_TRIANGLES, indices[VAO_ID::OVERLAY].size(), GL_UNSIGNED_INT, nullptr);
+
+    enableFaceCulling();
+    glUseProgram(programMain);
 }
 
 /**
@@ -253,7 +385,7 @@ void Window::drawScene(VAO_ID ID) {
  */
 void Window::enableBlending() {
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
     glBlendEquation(GL_FUNC_ADD);
 }
 
@@ -281,10 +413,17 @@ void Window::enableFaceCulling() {
 }
 
 /**
+ * Disable culling of faces pointing in the wrong direction
+ */
+void Window::disableFaceCulling() {
+    glDisable(GL_CULL_FACE);
+}
+
+/**
  * Reads mouse input and return updated position vector for the camera
  * @return
  */
-glm::vec3 Window::updateCamera() {
+void Window::updateCamera() {
     // get elapsed time since last frame
     double currentFrame = glfwGetTime();
     deltaTime = currentFrame - lastFrame;
@@ -299,7 +438,7 @@ glm::vec3 Window::updateCamera() {
     mouse_pos_x = xpos;
     mouse_pos_y = ypos;
     // use magic rotation trigonometry to compute the new camera position centered around the origin
-    return cameraDistance * glm::vec3(
+    cameraPosition = cameraDistance * glm::vec3(
             glm::sin(horizontal_angle) * glm::cos(vertical_angle),
             glm::sin(vertical_angle),
             glm::cos(horizontal_angle) * glm::cos(vertical_angle)
@@ -363,7 +502,7 @@ void Window::createShader(uint32_t shader, const char* &code, const char* type) 
  * @param vShader file path
  * @param fShader file path
  */
-void Window::initProgram(const char* vShader, const char* fShader) const {
+void Window::initProgram(uint32_t ID, const char *vShader, const char *fShader) {
     std::string vertexCode = readShaderFile(vShader);
     const char* vShaderCode = vertexCode.c_str();
 
@@ -374,10 +513,10 @@ void Window::initProgram(const char* vShader, const char* fShader) const {
     createShader(vertex, vShaderCode, "VERTEX");
     createShader(fragment, fShaderCode, "FRAGMENT");
 
-    glAttachShader(program, vertex);
-    glAttachShader(program, fragment);
-    glLinkProgram(program);
-    checkCompileErrors(program, "PROGRAM");
+    glAttachShader(ID, vertex);
+    glAttachShader(ID, fragment);
+    glLinkProgram(ID);
+    checkCompileErrors(ID, "PROGRAM");
     glDeleteShader(vertex);
     glDeleteShader(fragment);
 }
@@ -472,12 +611,15 @@ void Window::waitNextFrame() const {
  */
 void Window::close() {
     /* Deallocate vertex arrays and buffer */
-    glDeleteVertexArrays(2, VAO);
-    glDeleteBuffers(2, VBO);
-    glDeleteBuffers(2, NBO);
-    glDeleteBuffers(2, IBO);
+    glDeleteVertexArrays(VAO_ID::NUMBER, VAO);
+    glDeleteBuffers(VAO_ID::NUMBER, VBO);
+    glDeleteBuffers(VAO_ID::NUMBER, NBO);
+    glDeleteBuffers(VAO_ID::NUMBER, IBO);
+    /* Deallocate textures */
+    glDeleteTextures(TEXTURE_ID::NUMBER_TEXTURE, textures);
     /* Delete compiled program */
-    glDeleteProgram(program);
+    glDeleteProgram(programMain);
+    glDeleteProgram(programTexture);
     /* Kill the window */
     glfwTerminate();
 }

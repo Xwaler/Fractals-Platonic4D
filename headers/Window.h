@@ -23,7 +23,13 @@ using namespace std;
 enum VAO_ID {
     CUBE = 0,
     TRAPEZE = 1,
-    NUMBER = 2,
+    OVERLAY = 2,
+    NUMBER = 3,
+};
+
+enum TEXTURE_ID {
+    OVERLAY_TEXTURE = 0,
+    NUMBER_TEXTURE = 1,
 };
 
 /**
@@ -38,6 +44,8 @@ private:
     static bool leftButtonPressed;
     static bool wireframe;
 
+    glm::vec3 cameraPosition{};
+
     double mouse_speed = 0.2;
     double xpos = 0.0, ypos = 0.0;
     double mouse_pos_x = 0.0;
@@ -50,7 +58,7 @@ private:
     double lastFrame = 0.0f;
 
     GLFWwindow* window{};
-    uint32_t program = 0;
+    uint32_t programMain = 0, programTexture = 0;
     uint32_t VAO[VAO_ID::NUMBER]{}, VBO[VAO_ID::NUMBER]{}, NBO[VAO_ID::NUMBER]{}, IBO[VAO_ID::NUMBER]{};
     vector<float> points[VAO_ID::NUMBER]{};
     vector<float> vertices[VAO_ID::NUMBER]{};
@@ -58,6 +66,12 @@ private:
     vector<uint32_t> indices[VAO_ID::NUMBER]{};
 
     Sponge sponge;
+
+    vector<glm::vec3> transparentSidesPosition;
+    vector<glm::mat4> transparentSidesModelMatrix;
+
+    uint32_t textures[TEXTURE_ID::NUMBER_TEXTURE]{};
+    vector<float> textureArrays[TEXTURE_ID::NUMBER_TEXTURE]{};
 
 public:
     Window();
@@ -74,6 +88,12 @@ public:
     void renderMengerSpongeLikeHypercube();
 
     /**
+     * Update the overlay image
+     * @param array of size (W * H * 4)
+     */
+    void setOverlayArray(vector<float> &array);
+
+    /**
      * Clear allocated buffers and closes the window
      */
     void close();
@@ -85,9 +105,14 @@ private:
     void initOpenGL();
 
     /**
-     * Reads and compile shaders then adds them to the program
+     * Reads and compile shaders for 3D then adds them to the program
      */
-    void loadShaders();
+    void loadMainShaders();
+
+    /**
+     * Reads and compile shaders for 2D textures then adds them to the program
+     */
+    void loadOverlayShaders();
 
     /**
      * Allocate and link array/buffers to OpenGL
@@ -99,27 +124,49 @@ private:
      * and create pointers to those memory spaces for shaders to access them
      * @param ID of the VAO used to store the data
      */
-    void fillVertexArray(VAO_ID ID);
+    void fillSpongeVertexArray(VAO_ID ID);
+
+    /**
+     * Initialize overlay texture buffer and position vertices
+     */
+    void createOverlayTexture();
 
     /**
      * Sends a 4x4 matrix to a GPU uniform
      * @param name of the uniform in the shader
      * @param mat to send
      */
-    void loadUniformMat4f(const char* name, const glm::mat4 &mat) const;
+    static void loadUniformMat4f(uint32_t program, const char* name, const glm::mat4 &mat);
 
     /**
      * Sends a vec4 to a GPU uniform
      * @param name of the uniform in the shader
      * @param vec to send
      */
-    void loadUniformVec4f(const char* name, const glm::vec4 &vec) const;
+    static void loadUniformVec4f(uint32_t program, const char *name, const glm::vec4 &vec);
+
+    /**
+     * Sends a float to a GPU uniform
+     * @param name of the uniform in the shader
+     * @param vec to send
+     */
+    static void loadUniform1f(uint32_t program, const char *name, float value);
+
+    /**
+     * Initialize the faces position vector used to determine those closest to the camera
+     */
+    void prepareBackToFrontDrawing();
 
     /**
      * Binds the selected VAO and draw it's content
      * @param ID of the VAO to draw
      */
     void drawScene(VAO_ID ID);
+
+    /**
+     * Draw the overlay texture to the viewport
+     */
+    void drawOverlay();
 
     /**
      * Reset background and buffer bit
@@ -146,7 +193,7 @@ private:
      * Reads mouse input and return updated position vector for the camera
      * @return
      */
-    glm::vec3 updateCamera();
+    void updateCamera();
 
     /**
      * Enable alpha blending for transparency
@@ -157,6 +204,11 @@ private:
      * Enable culling of faces pointing in the wrong direction
      */
     static void enableFaceCulling();
+
+    /**
+     * Disable culling of faces pointing in the wrong direction
+     */
+    static void disableFaceCulling();
 
     /**
      * Enables OpenGL depth test
@@ -195,7 +247,7 @@ private:
      * @param vShader file path
      * @param fShader file path
      */
-    void initProgram(const char* vShader, const char* fShader) const;
+    static void initProgram(uint32_t ID, const char *vShader, const char *fShader) ;
 
     /**
      * Called when the window is resized, update the viewport accordingly
