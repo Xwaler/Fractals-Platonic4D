@@ -39,6 +39,8 @@ class Window {
 private:
     static int WIDTH;
     static int HEIGHT;
+    const static int OVERLAY_WIDTH;
+    const static int OVERLAY_HEIGHT;
     static float cameraDistance;
     static double scroll_speed;
     static bool leftButtonPressed;

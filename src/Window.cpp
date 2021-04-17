@@ -4,6 +4,8 @@ using namespace std;
 
 int Window::WIDTH = 1280;
 int Window::HEIGHT = 720;
+const int Window::OVERLAY_WIDTH = Window::WIDTH; // fixed overlay image width
+const int Window::OVERLAY_HEIGHT = Window::HEIGHT; // fixed overlay image height
 float Window::cameraDistance = 3.0f;
 double Window::scroll_speed = 0.2;
 bool Window::leftButtonPressed = false;
@@ -17,10 +19,10 @@ Window::Window() : sponge(){
     createOverlayTexture();
 
     /* Overlay example */
-    vector<float> test(WIDTH * HEIGHT * 4, 0.0f);
-    for (uint32_t i = 0; i < WIDTH; ++i) {
-        test[4 * (50 * WIDTH + i)] = i / (float) WIDTH; // PROGRESSIVE RED
-        test[4 * (50 * WIDTH + i) + 3] = 0.7f; // ALPHA
+    vector<float> test(OVERLAY_WIDTH * OVERLAY_HEIGHT * 4, 0.0f);
+    for (uint32_t i = 0; i < OVERLAY_WIDTH; ++i) {
+        test[4 * (50 * OVERLAY_WIDTH + i)] = i / (float) OVERLAY_WIDTH; // PROGRESSIVE RED
+        test[4 * (50 * OVERLAY_WIDTH + i) + 3] = 0.7f; // ALPHA
     }
     setOverlayArray(test);
 }
@@ -126,9 +128,9 @@ void Window::createOverlayTexture() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     /* Initialize texture image to empty (black) and transparent */
-    textureArrays[TEXTURE_ID::OVERLAY_TEXTURE] = vector<float>(WIDTH * HEIGHT * 4, 0.0f);
+    textureArrays[TEXTURE_ID::OVERLAY_TEXTURE] = vector<float>(OVERLAY_WIDTH * OVERLAY_HEIGHT * 4, 0.0f);
     /* Fill the texture with image to preallocate space */
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, OVERLAY_WIDTH, OVERLAY_HEIGHT, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
 }
 
 /**
@@ -367,7 +369,7 @@ void Window::drawOverlay() {
     /* Activate our texture ID and fill it with the image data */
     glActiveTexture(GL_TEXTURE0 + TEXTURE_ID::OVERLAY_TEXTURE);
     glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_ID::OVERLAY_TEXTURE]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, OVERLAY_WIDTH, OVERLAY_HEIGHT, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
 
     /* Setup orthonormal projection matrix */
     glm::mat4 projection = glm::ortho(0, 1, 1, 0, -1, 1);
