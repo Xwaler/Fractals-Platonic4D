@@ -63,16 +63,16 @@ void Window::renderMengerSpongeLikeHypercube() {
         loadUniformMat4f(programMain, "projection", projection);
 
         /* Set and push vertices color to the gpu through uniform */
-        glm::vec4 color = glm::vec4(0.5f, 0.5f, 0.5f, 0.8f);
-        loadUniformVec4f(programMain, "color", color);
-        /* Draw the scene from the trapeze vertex array */
-        drawScene(VAO_ID::TRAPEZE);
-
-        /* Set and push vertices color to the gpu through uniform */
-        color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+        glm::vec4 color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
         loadUniformVec4f(programMain, "color", color);
         /* Draw the scene from the cube vertex array */
         drawScene(VAO_ID::CUBE);
+
+        /* Set and push vertices color to the gpu through uniform */
+        color = glm::vec4(0.5f, 0.5f, 0.5f, 0.7f);
+        loadUniformVec4f(programMain, "color", color);
+        /* Draw the scene from the trapeze vertex array */
+        drawScene(VAO_ID::TRAPEZE);
 
         /* Draw overlay over the viewport */
         drawOverlay();
@@ -105,8 +105,8 @@ void Window::createOverlayTexture() {
             1.0f, 1.0f,
     };
     indices[VAO_ID::OVERLAY] = {
-            0, 1, 2,
-            2, 1, 3,
+            0, 2, 1,
+            1, 2, 3,
     };
     /* Bind vertex buffer to vertex array */
     glBindBuffer(GL_ARRAY_BUFFER, VBO[VAO_ID::OVERLAY]);
@@ -167,6 +167,7 @@ void Window::initOpenGL() {
     
     /* Enable some opengl capacities */
     enableBlending();
+    enableDepthTest();
     enableFaceCulling();
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_MULTISAMPLE);
@@ -305,9 +306,6 @@ void Window::drawScene(VAO_ID ID) {
 
     switch (ID) {
         case VAO_ID::CUBE: {
-            // Enable depth test for solid objects
-            enableDepthTest();
-
             // Compute model matrix for one trapeze, translate to center the object then downscale it by 2
             glm::mat4 model =
                     glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)) *
@@ -319,9 +317,6 @@ void Window::drawScene(VAO_ID ID) {
             break;
         }
         case VAO_ID::TRAPEZE: {
-            /* Disable depth test for transparency */
-            disableDepthTest();
-
             /* Compute distances between each side and the camera */
             vector<double> distance; vector<uint32_t> indexSortedDistance;
             for (glm::vec3 sidePosition: transparentSidesPosition) {
@@ -363,8 +358,6 @@ void Window::drawOverlay() {
     /* Bind overlay vertex array and load overlay shader program */
     glBindVertexArray(VAO[VAO_ID::OVERLAY]);
     glUseProgram(programTexture);
-    /* Disable face culling to avoid overlay disappearance based on camera position */
-    disableFaceCulling();
 
     /* Activate our texture ID and fill it with the image data */
     glActiveTexture(GL_TEXTURE0 + TEXTURE_ID::OVERLAY_TEXTURE);
@@ -378,7 +371,6 @@ void Window::drawOverlay() {
     loadUniform1f(programTexture, "overlayTexture", TEXTURE_ID::OVERLAY_TEXTURE);
     glDrawElements(GL_TRIANGLES, indices[VAO_ID::OVERLAY].size(), GL_UNSIGNED_INT, nullptr);
 
-    enableFaceCulling();
     glUseProgram(programMain);
 }
 
@@ -583,7 +575,7 @@ void Window::scroll_callback(GLFWwindow* w, double xoffset, double yoffset) {
  * Reset background and buffer bit
  */
 void Window::clear() {
-    glClearColor(0.7f, 0.7f, 0.7f, 1.0f); // reset background color
+    glClearColor(0.8f, 0.8f, 0.8f, 1.0f); // reset background color
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear opengl buffers
 }
 
