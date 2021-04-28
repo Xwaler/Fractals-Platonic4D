@@ -13,6 +13,7 @@
 #include <time.h>
 
 #include "Sponge.h"
+#include "Constants.h"
 
 using namespace std;
 
@@ -37,10 +38,10 @@ enum TEXTURE_ID {
  */
 class Window {
 private:
-    static int WIDTH;
-    static int HEIGHT;
-    const static int OVERLAY_WIDTH;
-    const static int OVERLAY_HEIGHT;
+    static uint16_t WIDTH;
+    static uint16_t HEIGHT;
+    const static uint16_t OVERLAY_WIDTH;
+    const static uint16_t OVERLAY_HEIGHT;
     static float cameraDistance;
     static double scroll_speed;
     static bool leftButtonPressed;

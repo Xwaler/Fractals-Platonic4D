@@ -2,10 +2,10 @@
 
 using namespace std;
 
-int Window::WIDTH = 1280;
-int Window::HEIGHT = 720;
-const int Window::OVERLAY_WIDTH = Window::WIDTH; // fixed overlay image width
-const int Window::OVERLAY_HEIGHT = Window::HEIGHT; // fixed overlay image height
+uint16_t Window::WIDTH = 1280;
+uint16_t Window::HEIGHT = 720;
+const uint16_t Window::OVERLAY_WIDTH = Window::WIDTH; // fixed overlay image width
+const uint16_t Window::OVERLAY_HEIGHT = Window::HEIGHT; // fixed overlay image height
 float Window::cameraDistance = 3.0f;
 double Window::scroll_speed = 0.2;
 bool Window::leftButtonPressed = false;
