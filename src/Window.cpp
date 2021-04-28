@@ -4,27 +4,20 @@ using namespace std;
 
 uint16_t Window::WIDTH = 1280;
 uint16_t Window::HEIGHT = 720;
-const uint16_t Window::OVERLAY_WIDTH = Window::WIDTH; // fixed overlay image width
-const uint16_t Window::OVERLAY_HEIGHT = Window::HEIGHT; // fixed overlay image height
 float Window::cameraDistance = 3.0f;
 double Window::scroll_speed = 0.2;
 bool Window::leftButtonPressed = false;
 bool Window::wireframe = false;
+double Window::xpos = 0.0;
+double Window::ypos = 0.0;
+Menu Window::menu; //TODO: éviter cette chose, on doit pouvoir acceder à menu depuis des méthodes statiques (event handlers)
 
-Window::Window() : sponge(){
+Window::Window() : sponge() {
     initOpenGL();
     loadMainShaders();
     loadOverlayShaders();
     createArraysAndBuffers();
     createOverlayTexture();
-
-    /* Overlay example */
-    vector<float> test(OVERLAY_WIDTH * OVERLAY_HEIGHT * 4, 0.0f);
-    for (uint32_t i = 0; i < OVERLAY_WIDTH; ++i) {
-        test[4 * (50 * OVERLAY_WIDTH + i)] = i / (float) OVERLAY_WIDTH; // PROGRESSIVE RED
-        test[4 * (50 * OVERLAY_WIDTH + i) + 3] = 0.7f; // ALPHA
-    }
-    setOverlayArray(test);
 }
 
 /**
@@ -54,6 +47,12 @@ void Window::renderMengerSpongeLikeHypercube() {
 
         /* Update the camera position based on mouse movements */
         updateCamera();
+
+        /* Update the overlay based on mouse events */
+        menu.handleMouseMovement((uint16_t) (xpos / WIDTH * MenuConstants::width),
+                                 (uint16_t) (ypos / HEIGHT * MenuConstants::height));
+
+        setOverlayArray(menu.appearance);
 
         /* Initialize view matrix from camera and perspective projection matrix */
         glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0, 1.0f, 0.0f));
@@ -111,14 +110,14 @@ void Window::createOverlayTexture() {
     /* Bind vertex buffer to vertex array */
     glBindBuffer(GL_ARRAY_BUFFER, VBO[VAO_ID::OVERLAY]);
     /* Buffer vertices to vertex buffer */
-    glBufferData(GL_ARRAY_BUFFER, vertices[VAO_ID::OVERLAY].size() * sizeof(float), vertices[VAO_ID::OVERLAY].data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (long) (vertices[VAO_ID::OVERLAY].size() * sizeof(float)), vertices[VAO_ID::OVERLAY].data(), GL_STATIC_DRAW);
     /* Assign the buffer content to vertex array pointer 0 */
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
     glEnableVertexAttribArray(0);
     /* Bind vertex buffer to vertex array */
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[VAO_ID::OVERLAY]);
     /* Buffer vertices to vertex buffer */
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices[VAO_ID::OVERLAY].size() * sizeof(float), indices[VAO_ID::OVERLAY].data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long) (indices[VAO_ID::OVERLAY].size() * sizeof(float)), indices[VAO_ID::OVERLAY].data(), GL_STATIC_DRAW);
 
     /* Select shader texture ID */
     glActiveTexture(GL_TEXTURE0 + TEXTURE_ID::OVERLAY_TEXTURE);
@@ -128,9 +127,9 @@ void Window::createOverlayTexture() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     /* Initialize texture image to empty (black) and transparent */
-    textureArrays[TEXTURE_ID::OVERLAY_TEXTURE] = vector<float>(OVERLAY_WIDTH * OVERLAY_HEIGHT * 4, 0.0f);
+    textureArrays[TEXTURE_ID::OVERLAY_TEXTURE] = vector<float>(MenuConstants::width * MenuConstants::height * 4, 0.0f);
     /* Fill the texture with image to preallocate space */
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, OVERLAY_WIDTH, OVERLAY_HEIGHT, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, MenuConstants::width, MenuConstants::height, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
 }
 
 /**
@@ -232,21 +231,21 @@ void Window::fillSpongeVertexArray(VAO_ID ID) {
     /* Bind vertex buffer to vertex array */
     glBindBuffer(GL_ARRAY_BUFFER, VBO[ID]);
     /* Buffer vertices to vertex buffer */
-    glBufferData(GL_ARRAY_BUFFER, vertices[ID].size() * sizeof(float), vertices[ID].data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (long) (vertices[ID].size() * sizeof(float)), vertices[ID].data(), GL_STATIC_DRAW);
     /* Assign the buffer content to vertex array pointer 0 */
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
     glEnableVertexAttribArray(0);
     /* Bind normals buffer to vertex array */
     glBindBuffer(GL_ARRAY_BUFFER, NBO[ID]);
     /* Buffer normals to normal buffer */
-    glBufferData(GL_ARRAY_BUFFER, normals[ID].size() * sizeof(float), normals[ID].data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (long) (normals[ID].size() * sizeof(float)), normals[ID].data(), GL_STATIC_DRAW);
     /* Assign the buffer content to vertex array pointer 1 */
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
     glEnableVertexAttribArray(1);
     /* Bind indices buffer to vertex array */
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[ID]);
     /* Buffer indices to vertex buffer */
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices[ID].size() * sizeof(uint32_t), indices[ID].data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long) (indices[ID].size() * sizeof(uint32_t)), indices[ID].data(), GL_STATIC_DRAW);
 }
 
 /**
@@ -313,7 +312,7 @@ void Window::drawScene(VAO_ID ID) {
             // Push model matrix to gpu through uniform
             loadUniformMat4f(programMain, "model", model);
             // Draw vertices and create fragments with triangles
-            glDrawElements(GL_TRIANGLES, indices[ID].size(), GL_UNSIGNED_INT, nullptr);
+            glDrawElements(GL_TRIANGLES, (int32_t) (indices[ID].size()), GL_UNSIGNED_INT, nullptr);
             break;
         }
         case VAO_ID::TRAPEZE: {
@@ -343,7 +342,7 @@ void Window::drawScene(VAO_ID ID) {
                 // Push model matrix to gpu through uniform
                 loadUniformMat4f(programMain, "model", transparentSidesModelMatrix[index]);
                 // Draw vertices and create fragments with triangles
-                glDrawElements(GL_TRIANGLES, indices[ID].size(), GL_UNSIGNED_INT, nullptr);
+                glDrawElements(GL_TRIANGLES, (int32_t) indices[ID].size(), GL_UNSIGNED_INT, nullptr);
             }
             break;
         }
@@ -362,14 +361,14 @@ void Window::drawOverlay() {
     /* Activate our texture ID and fill it with the image data */
     glActiveTexture(GL_TEXTURE0 + TEXTURE_ID::OVERLAY_TEXTURE);
     glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_ID::OVERLAY_TEXTURE]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, OVERLAY_WIDTH, OVERLAY_HEIGHT, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, MenuConstants::width, MenuConstants::height, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
 
     /* Setup orthonormal projection matrix */
     glm::mat4 projection = glm::ortho(0, 1, 1, 0, -1, 1);
     loadUniformMat4f(programTexture, "projection", projection);
     /* Bind our texture ID to the shader */
     loadUniform1f(programTexture, "overlayTexture", TEXTURE_ID::OVERLAY_TEXTURE);
-    glDrawElements(GL_TRIANGLES, indices[VAO_ID::OVERLAY].size(), GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_TRIANGLES, (int32_t) indices[VAO_ID::OVERLAY].size(), GL_UNSIGNED_INT, nullptr);
 
     glUseProgram(programMain);
 }
@@ -425,7 +424,7 @@ void Window::updateCamera() {
 
     // get new cursor position
     glfwGetCursorPos(window, &xpos, &ypos);
-    if (leftButtonPressed) { // if the user is pressing the mouse left button, update the camera angle
+    if (leftButtonPressed && !menu.isInputCaptured) { // if the user is pressing the mouse left button, update the camera angle
         horizontal_angle += (float) (deltaTime * mouse_speed * (mouse_pos_x - xpos));
         vertical_angle += (float) (deltaTime * mouse_speed * (ypos - mouse_pos_y));
     }
@@ -554,9 +553,19 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
  */
 void Window::mouse_button_callback(GLFWwindow* w, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        leftButtonPressed = true;
+        glfwGetCursorPos(w, &xpos, &ypos);
+        menu.handleKeyPress(action,
+                            (uint16_t) (xpos / WIDTH * MenuConstants::width),
+                            (uint16_t) (ypos / HEIGHT * MenuConstants::height));
+        if (!menu.isInputCaptured) {
+            leftButtonPressed = true;
+        }
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+        glfwGetCursorPos(w, &xpos, &ypos);
+        menu.handleKeyPress(action,
+                            (uint16_t) (xpos / WIDTH * MenuConstants::width),
+                            (uint16_t) (ypos / HEIGHT * MenuConstants::height));
         leftButtonPressed = false;
     }
 }

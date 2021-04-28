@@ -13,7 +13,7 @@
 #include <time.h>
 
 #include "Sponge.h"
-#include "Constants.h"
+#include "Menu.h"
 
 using namespace std;
 
@@ -40,8 +40,6 @@ class Window {
 private:
     static uint16_t WIDTH;
     static uint16_t HEIGHT;
-    const static uint16_t OVERLAY_WIDTH;
-    const static uint16_t OVERLAY_HEIGHT;
     static float cameraDistance;
     static double scroll_speed;
     static bool leftButtonPressed;
@@ -50,7 +48,7 @@ private:
     glm::vec3 cameraPosition{};
 
     double mouse_speed = 0.2;
-    double xpos = 0.0, ypos = 0.0;
+    static double xpos, ypos;
     double mouse_pos_x = 0.0;
     double mouse_pos_y = 0.0;
     float horizontal_angle = 0.0f;
@@ -73,6 +71,7 @@ private:
     vector<glm::vec3> transparentSidesPosition;
     vector<glm::mat4> transparentSidesModelMatrix;
 
+    static Menu menu;
     uint32_t textures[TEXTURE_ID::NUMBER_TEXTURE]{};
     vector<float> textureArrays[TEXTURE_ID::NUMBER_TEXTURE]{};
 
