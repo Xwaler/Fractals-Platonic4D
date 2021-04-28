@@ -14,12 +14,12 @@ struct light {
 };
 
 light lights[2] = {
-    light(vec3(5.0f, 6.0f, 3.0f), vec3(0.4f, 0.4f, 0.4f)),
-    light(vec3(-3.0f, -10.0f, -5.0f), vec3(0.4f, 0.4f, 0.4f)),
+    light(vec3(5.0f, 6.0f, 3.0f), vec3(0.8f, 0.8f, 0.8f)),
+    light(vec3(-3.0f, -10.0f, -5.0f), vec3(0.8f, 0.8f, 0.8f)),
 };
 
 void main() {
-    vec3 result = 0.4f * vec3(1.0f, 1.0f, 1.0f); // ambiant light
+    vec3 result = 0.2f * vec3(1.0f, 1.0f, 1.0f); // ambiant light
 
     vec3 norm = normalize(transpose(inverse(mat3(model))) * vNormal);
     for (uint i = 0; i < 2; ++i) {
