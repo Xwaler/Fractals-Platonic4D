@@ -49,10 +49,10 @@ void Window::renderMengerSpongeLikeHypercube() {
         updateCamera();
 
         /* Update the overlay based on mouse events */
-        menu.handleMouseMovement((uint16_t) (xpos / WIDTH * MenuConstants::width),
-                                 (uint16_t) (ypos / HEIGHT * MenuConstants::height));
+        menu.handleMouseMovement((uint16_t) (xpos / WIDTH * MenuProperties::width),
+                                 (uint16_t) (ypos / HEIGHT * MenuProperties::height));
 
-        setOverlayArray(menu.appearance);
+        setOverlayArray(menu.getAppearance());
 
         /* Initialize view matrix from camera and perspective projection matrix */
         glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0, 1.0f, 0.0f));
@@ -127,9 +127,9 @@ void Window::createOverlayTexture() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     /* Initialize texture image to empty (black) and transparent */
-    textureArrays[TEXTURE_ID::OVERLAY_TEXTURE] = vector<float>(MenuConstants::width * MenuConstants::height * 4, 0.0f);
+    textureArrays[TEXTURE_ID::OVERLAY_TEXTURE] = vector<float>(MenuProperties::width * MenuProperties::height * 4, 0.0f);
     /* Fill the texture with image to preallocate space */
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, MenuConstants::width, MenuConstants::height, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, MenuProperties::width, MenuProperties::height, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
 }
 
 /**
@@ -318,7 +318,7 @@ void Window::drawScene(VAO_ID ID) {
         case VAO_ID::TRAPEZE: {
             /* Compute distances between each side and the camera */
             vector<double> distance; vector<uint32_t> indexSortedDistance;
-            for (glm::vec3 sidePosition: transparentSidesPosition) {
+            for (glm::vec3 &sidePosition: transparentSidesPosition) {
                 distance.push_back(glm::length(cameraPosition - sidePosition));
             }
             /* Initialize indices for synchronised sorting */
@@ -357,19 +357,23 @@ void Window::drawOverlay() {
     /* Bind overlay vertex array and load overlay shader program */
     glBindVertexArray(VAO[VAO_ID::OVERLAY]);
     glUseProgram(programTexture);
+    /* Disable depth test to ensure the overlay to be on top of everything */
+    disableDepthTest();
 
     /* Activate our texture ID and fill it with the image data */
     glActiveTexture(GL_TEXTURE0 + TEXTURE_ID::OVERLAY_TEXTURE);
     glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_ID::OVERLAY_TEXTURE]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, MenuConstants::width, MenuConstants::height, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, MenuProperties::width, MenuProperties::height, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
 
     /* Setup orthonormal projection matrix */
-    glm::mat4 projection = glm::ortho(0, 1, 1, 0, -1, 1);
+    glm::mat4 projection = glm::ortho(0.0f, 1.0f, 1.0f, 0.0f, -0.1f, 0.1f);
     loadUniformMat4f(programTexture, "projection", projection);
     /* Bind our texture ID to the shader */
     loadUniform1f(programTexture, "overlayTexture", TEXTURE_ID::OVERLAY_TEXTURE);
     glDrawElements(GL_TRIANGLES, (int32_t) indices[VAO_ID::OVERLAY].size(), GL_UNSIGNED_INT, nullptr);
 
+    /* Re-enable for following draws */
+    enableDepthTest();
     glUseProgram(programMain);
 }
 
@@ -424,7 +428,7 @@ void Window::updateCamera() {
 
     // get new cursor position
     glfwGetCursorPos(window, &xpos, &ypos);
-    if (leftButtonPressed && !menu.isInputCaptured) { // if the user is pressing the mouse left button, update the camera angle
+    if (leftButtonPressed && !menu.isInputCaptured()) { // if the user is pressing the mouse left button, update the camera angle
         horizontal_angle += (float) (deltaTime * mouse_speed * (mouse_pos_x - xpos));
         vertical_angle += (float) (deltaTime * mouse_speed * (ypos - mouse_pos_y));
     }
@@ -555,17 +559,17 @@ void Window::mouse_button_callback(GLFWwindow* w, int button, int action, int mo
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         glfwGetCursorPos(w, &xpos, &ypos);
         menu.handleKeyPress(action,
-                            (uint16_t) (xpos / WIDTH * MenuConstants::width),
-                            (uint16_t) (ypos / HEIGHT * MenuConstants::height));
-        if (!menu.isInputCaptured) {
+                            (uint16_t) (xpos / WIDTH * MenuProperties::width),
+                            (uint16_t) (ypos / HEIGHT * MenuProperties::height));
+        if (!menu.isInputCaptured()) {
             leftButtonPressed = true;
         }
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
         glfwGetCursorPos(w, &xpos, &ypos);
         menu.handleKeyPress(action,
-                            (uint16_t) (xpos / WIDTH * MenuConstants::width),
-                            (uint16_t) (ypos / HEIGHT * MenuConstants::height));
+                            (uint16_t) (xpos / WIDTH * MenuProperties::width),
+                            (uint16_t) (ypos / HEIGHT * MenuProperties::height));
         leftButtonPressed = false;
     }
 }

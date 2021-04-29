@@ -9,7 +9,7 @@
 #include <cstring>
 #include <iostream>
 
-class MenuConstants {
+class MenuProperties {
 public:
     static float backgroundColors[4];
     static float gaugeColors[4];
@@ -17,6 +17,10 @@ public:
     static float tabBoundariesColors[4];
     const static uint16_t width = 640;
     const static uint16_t height = 360;
+
+    static bool isConstrained(uint16_t abscissa, uint16_t ordinate) {
+        return abscissa >= 0 && abscissa < width && ordinate >= 0 && ordinate < height;
+    }
 };
 
 class ShapesDrawer {
@@ -25,8 +29,8 @@ public:
                      uint16_t semiDiagonalLength, const float colors[4]){
         for (uint16_t i = 0; i <= semiDiagonalLength; ++i) {
             for (uint16_t j = 0; j <= semiDiagonalLength - i; ++j){
-                memcpy(appearance.data() + ((ordinate + i) * MenuConstants::width + abscissa + j) * 4, colors, 4 * sizeof(float));
-                memcpy(appearance.data() + ((ordinate + i) * MenuConstants::width + abscissa - j) * 4, colors, 4 * sizeof(float));
+                memcpy(appearance.data() + ((ordinate + i) * MenuProperties::width + abscissa + j) * 4, colors, 4 * sizeof(float));
+                memcpy(appearance.data() + ((ordinate + i) * MenuProperties::width + abscissa - j) * 4, colors, 4 * sizeof(float));
             }
         }
     }
@@ -35,36 +39,46 @@ public:
                               uint16_t bottomRightAbscissa, uint16_t bottomRightOrdinate, const float colors[4]){
         for (uint16_t i = topLeftOrdinate; i <= bottomRightOrdinate; ++i) {
             for (uint16_t j = topLeftAbscissa; j <= bottomRightAbscissa; ++j) {
-                memcpy(appearance.data() + ((i) * MenuConstants::width + j) * 4, colors, 4 * sizeof(float));
+                memcpy(appearance.data() + ((i) * MenuProperties::width + j) * 4, colors, 4 * sizeof(float));
             }
         }
     }
 };
 
 class Cursor {
+private:
+    std::vector<float> &appearance;
     uint16_t abscissa;
     uint16_t ordinate;
     uint16_t semiDiagonalLength;
+    uint16_t startAbscissaTrack;
+    uint16_t endAbscissaTrack;
+
+    void draw() {
+        ShapesDrawer::drawDiamond(appearance, abscissa, ordinate, semiDiagonalLength, MenuProperties::cursorColors);
+    }
+
+    void restoreBackground() {
+        ShapesDrawer::drawDiamond(appearance, abscissa, ordinate, semiDiagonalLength, MenuProperties::backgroundColors);
+        ShapesDrawer::drawRectangle(appearance, abscissa - semiDiagonalLength, ordinate, abscissa + semiDiagonalLength, ordinate + semiDiagonalLength, MenuProperties::gaugeColors);
+    }
 
 public:
-    Cursor(std::vector<float> &appearance, uint16_t abscissa, uint16_t ordinate, uint16_t semiDiagonalLength)
-            : abscissa(abscissa), ordinate(ordinate), semiDiagonalLength(semiDiagonalLength) {
-        draw(appearance);
+    Cursor(std::vector<float> &appearance, uint16_t abscissa, uint16_t ordinate, uint16_t trackLength, uint16_t semiDiagonalLength)
+            : appearance(appearance), abscissa(abscissa + semiDiagonalLength), ordinate(ordinate),
+              startAbscissaTrack(abscissa + semiDiagonalLength), endAbscissaTrack(abscissa + trackLength - semiDiagonalLength),
+              semiDiagonalLength(semiDiagonalLength) {
+        draw();
     }
 
-    void draw(std::vector<float> &appearance) {
-        ShapesDrawer::drawDiamond(appearance, abscissa, ordinate, semiDiagonalLength, MenuConstants::cursorColors);
+    void move(uint16_t newAbscissa) {
+        restoreBackground();
+        abscissa = glm::max(glm::min(newAbscissa, endAbscissaTrack), startAbscissaTrack);
+        draw();
     }
 
-    void move(std::vector<float> &appearance, uint16_t newAbscissa, uint16_t newOrdinate) {
-        restoreBackground(appearance);
-        abscissa = newAbscissa; ordinate = newOrdinate;
-        draw(appearance);
-    }
-
-    void restoreBackground(std::vector<float> &appearance) {
-        ShapesDrawer::drawDiamond(appearance, abscissa, ordinate, semiDiagonalLength, MenuConstants::backgroundColors);
-        ShapesDrawer::drawRectangle(appearance, abscissa - semiDiagonalLength, ordinate, abscissa + semiDiagonalLength, ordinate, MenuConstants::gaugeColors);
+    float getValue() {
+        return (float) (abscissa - startAbscissaTrack) / (float) (endAbscissaTrack - startAbscissaTrack);
     }
 
     bool contains(uint16_t x, uint16_t y) {
@@ -73,32 +87,66 @@ public:
 };
 
 class Menu {
-    std::vector<Cursor> cursors;
+public:
     bool isLeftTabUp;
+private:
+    std::vector<float> appearance;
+    std::vector<Cursor> cursors;
+    Cursor* selected = nullptr;
+    std::vector<std::vector<uint16_t>> gaugePositions = {
+            { 10, 10, 60, 5 },
+    };
+
+    void drawGauges() {
+        for (std::vector<uint16_t> gauge: gaugePositions) {
+            ShapesDrawer::drawRectangle(
+                    appearance,
+                    gauge[0], gauge[1],
+                    gauge[0] + gauge[2], gauge[1] + gauge[3],
+                    MenuProperties::gaugeColors
+            );
+        }
+    }
+
+    void createCursors() {
+        for (std::vector<uint16_t> gauge: gaugePositions) {
+            cursors.emplace_back(appearance, gauge[0], gauge[1], gauge[2], gauge[3]);
+        }
+    }
 
 public:
-    std::vector<float> appearance;
-    bool isInputCaptured;
+    Menu() : appearance(MenuProperties::width * MenuProperties::height * 4, 0.0f), cursors(),
+             isLeftTabUp(false) {
+        drawGauges();
+        createCursors();
+    }
 
-    Menu() : appearance(MenuConstants::width * MenuConstants::height * 4, 0.0f), cursors(), isLeftTabUp(false), isInputCaptured(false) {
-        cursors.emplace_back(appearance, 100, 40, 5);
+    std::vector<float>& getAppearance() {
+        return appearance;
+    }
+
+    bool isInputCaptured() {
+        return selected != nullptr;
     }
 
     void handleKeyPress(uint32_t action, uint16_t abscissa, uint16_t ordinate) {
         if (action == GLFW_PRESS) {
-            for (Cursor c: cursors) {
+            for (Cursor &c: cursors) {
                 if (c.contains(abscissa, ordinate)) {
-                    isInputCaptured = true;
+                    selected = &c;
                 }
             }
         } else if (action == GLFW_RELEASE) {
-            isInputCaptured = false;
+            selected = nullptr;
         }
     }
 
     void handleMouseMovement(uint16_t abscissa, uint16_t ordinate) {
-        if (isInputCaptured) {
-            std::cout << "Mouse press captured by overlay" << std::endl;
+        if (isInputCaptured()) {
+            if (MenuProperties::isConstrained(abscissa, 0)) {
+                selected->move(abscissa);
+                std::cout << selected->getValue() << std::endl;
+            }
         }
     }
 };
