@@ -19,6 +19,10 @@ light lights[2] = {
 };
 
 void main() {
+    if (vColor.a <= 0.01f) {
+        discard;
+    }
+
     vec3 result = 0.2f * vec3(1.0f, 1.0f, 1.0f); // ambiant light
 
     vec3 norm = normalize(transpose(inverse(mat3(model))) * vNormal);

@@ -287,5 +287,4 @@ private:
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 };
 
-
 #endif //FRACTALS_PLATONIC4D_WINDOW_H

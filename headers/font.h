@@ -1,6 +1,10 @@
 #ifndef FRACTALS_PLATONIC4D_FONT_H
 #define FRACTALS_PLATONIC4D_FONT_H
 
+#include <string>
+
+#include "MenuProperties.h"
+
 static float fontColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
 /* Credits to https://github.com/dhepper/font8x8 */
@@ -135,20 +139,5 @@ static uint8_t font[128][8] = {
         {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}    // U+007F
 };
 /* End credits */
-
-static void writeLetters(std::vector<float> &appearance, const char* letters, uint8_t length, uint16_t abscissa, uint16_t ordinate) {
-    uint16_t letterAbscissa = abscissa;
-    for (uint8_t i = 0; i < length; ++i) {
-        uint8_t *pixels = font[letters[i]];
-        for (uint8_t y = 0; y < 8; ++y) {
-            for (uint8_t x = 0; x < 8; ++x) {
-                if ((pixels[y] >> x) & 1) {
-                    memcpy(appearance.data() + ((ordinate + y) * 640 + letterAbscissa + x) * 4, fontColor, 4 * sizeof(float));
-                }
-            }
-        }
-        letterAbscissa += 8;
-    }
-}
 
 #endif //FRACTALS_PLATONIC4D_FONT_H

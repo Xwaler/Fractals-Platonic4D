@@ -62,13 +62,13 @@ void Window::renderMengerSpongeLikeHypercube() {
         loadUniformMat4f(programMain, "projection", projection);
 
         /* Set and push vertices color to the gpu through uniform */
-        glm::vec4 color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+        glm::vec4 color = glm::vec4(1.0f, 0.0f, 0.0f, menu.getGaugeValue(Gauges::TRANSPARENCY_INNER));
         loadUniformVec4f(programMain, "color", color);
         /* Draw the scene from the cube vertex array */
         drawScene(VAO_ID::CUBE);
 
         /* Set and push vertices color to the gpu through uniform */
-        color = glm::vec4(0.5f, 0.5f, 0.5f, 0.7f);
+        color = glm::vec4(0.5f, 0.5f, 0.5f, menu.getGaugeValue(Gauges::TRANSPARENCY_OUTER));
         loadUniformVec4f(programMain, "color", color);
         /* Draw the scene from the trapeze vertex array */
         drawScene(VAO_ID::TRAPEZE);
