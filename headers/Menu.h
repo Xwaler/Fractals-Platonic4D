@@ -9,6 +9,8 @@
 #include <cstring>
 #include <iostream>
 
+#include "font.h"
+
 class MenuProperties {
 public:
     static float backgroundColors[4];
@@ -119,6 +121,7 @@ public:
              isLeftTabUp(false) {
         drawGauges();
         createCursors();
+        writeLetters(appearance, "Text test", 9, 50, 50);
     }
 
     std::vector<float>& getAppearance() {
