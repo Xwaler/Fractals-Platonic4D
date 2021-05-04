@@ -6,7 +6,7 @@ public:
     static float backgroundColors[4];
     static float gaugeColors[4];
     static float cursorColors[4];
-    static float tabBoundariesColors[4];
+    static float buttonColors[4];
     const static uint16_t width = 960;
     const static uint16_t height = 540;
 

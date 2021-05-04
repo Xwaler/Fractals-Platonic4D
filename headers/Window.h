@@ -41,6 +41,9 @@ enum TEXTURE_ID {
     NUMBER_TEXTURE = 1,
 };
 
+static const float PI = glm::pi<float>();
+static const float PI2 = 2.0f * glm::pi<float>();
+
 /**
  * Wrapping class for hypercube data management and OpenGL API interaction
  */
@@ -62,7 +65,7 @@ private:
     double mouse_pos_y = 0.0;
     float horizontal_angle = 0.0f;
     float vertical_angle = 0.0f;
-    const float fov = glm::pi<float>() / 4.0f;
+    const float fov = PI / 4.0f;
 
     int8_t targetFPS = 60;
     double deltaTime = 0.0f;

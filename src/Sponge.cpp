@@ -195,8 +195,6 @@ void Sponge::addFaces(uint64_t shift, vector<uint32_t> &indices, const vector<Fa
 }
 
 void Sponge::subdivideLine(const vector<float> &line, vector<float> &result) {
-    if (killComputation) throw WorkerKilled();
-
     /* Add the start of the line to the result */
     addPointToVector(result, line, 0);
 
@@ -369,6 +367,7 @@ void Sponge::subdivideChild(uint8_t depth, vector<float> &vertices, vector<uint3
 
 void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
                                 vector<uint32_t> &indices, const vector<Faces> &parentApparentFaces) {
+    if (killComputation) throw WorkerKilled();
 
     if (depth > 0) {
         /* Subdivide the given parallelepiped into 27 smaller one */

@@ -3,7 +3,7 @@
 float MenuProperties::backgroundColors[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 float MenuProperties::gaugeColors[4] = {0.9f, 0.9f, 0.9f, 1.0f};
 float MenuProperties::cursorColors[4] = {0.1f, 0.1f, 0.1f, 1.0f};
-float MenuProperties::tabBoundariesColors[4] = {0.1f, 0.1f, 0.1f, 1.0f};
+float MenuProperties::buttonColors[4] = {0.5f, 0.5f, 0.5f, 1.0f};
 
 static void writeLetters(std::vector<float> &appearance, const std::string& letters, uint16_t abscissa, uint16_t ordinate) {
     uint16_t letterAbscissa = abscissa;
@@ -114,6 +114,7 @@ void Menu::writeGaugeText() {
 }
 
 void Menu::createCursors() {
+    cursors.clear();
     for (auto & gaugeProperty : gaugeProperties) {
         cursors.emplace_back(
                 appearance, gaugeProperty[0], gaugeProperty[1],
@@ -124,11 +125,19 @@ void Menu::createCursors() {
     }
 }
 
+void Menu::drawResetButton() {
+    ShapesDrawer::drawRectangle(appearance, resetButtonProperties[0], resetButtonProperties[1],
+                                resetButtonProperties[0] + resetButtonProperties[2],
+                                resetButtonProperties[1] + resetButtonProperties[3], MenuProperties::buttonColors);
+    writeLetters(appearance, "Reset", resetButtonProperties[0] + 6, resetButtonProperties[1] + 7);
+}
+
 Menu::Menu() : appearance(MenuProperties::width * MenuProperties::height * 4, 0.0f), cursors(),
          isLeftTabUp(false) {
     drawGauges();
     writeGaugeText();
     createCursors();
+    drawResetButton();
 }
 
 std::vector<float>& Menu::getAppearance() {
@@ -149,6 +158,12 @@ void Menu::handleKeyPress(uint32_t action, uint16_t abscissa, uint16_t ordinate)
             if (c.contains(abscissa, ordinate)) {
                 selected = &c;
             }
+        }
+        if (abscissa >= resetButtonProperties[0] && abscissa < resetButtonProperties[0] + resetButtonProperties[2] &&
+            ordinate >= resetButtonProperties[1] && ordinate < resetButtonProperties[1] + resetButtonProperties[3]) {
+            drawGauges();
+            createCursors();
+            rotationWasModified = true;
         }
     } else if (action == GLFW_RELEASE) {
         if (selected != nullptr) {

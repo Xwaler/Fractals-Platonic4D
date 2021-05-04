@@ -47,7 +47,6 @@ protected:
         }
     }
 
-
     /**
      * Rotate hypercube points around YZ axis
      * @param angle
@@ -63,7 +62,6 @@ protected:
             p = rot * p;
         }
     }
-
 
     /**
      * Rotate hypercube points around ZX axis
@@ -81,7 +79,6 @@ protected:
         }
     }
 
-
     /**
      * Rotate hypercube points around XW axis
      * @param angle
@@ -98,7 +95,6 @@ protected:
         }
     }
 
-
     /**
      * Rotate hypercube points around YW axis
      * @param angle
@@ -114,7 +110,6 @@ protected:
             p = rot * p;
         }
     }
-
 
     /**
      * Rotate hypercube points around ZW axis

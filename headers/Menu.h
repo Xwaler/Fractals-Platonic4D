@@ -92,6 +92,9 @@ private:
             { MenuProperties::width - 130, 140, 120, 10, 0, 1 },
             { MenuProperties::width - 130, 170, 120, 10, 0, 1 },
     };
+    uint16_t resetButtonProperties[4] {
+        MenuProperties::width - 70, MenuProperties::height - 40, 50, 20,
+    };
 
 public:
     Menu();
@@ -111,6 +114,8 @@ private:
     void writeGaugeText();
 
     void createCursors();
+
+    void drawResetButton();
 };
 
 #endif //FRACTALS_PLATONIC4D_MENU_H

@@ -122,22 +122,22 @@ void Window::renderMengerSpongeLikeHypercube() {
             init4DRotations();
             /* Apply all 4D rotations */
             if (menu.getGaugeValue(Gauges::ROTATION_XY) != 0) {
-                rotateXY(menu.getGaugeValue(Gauges::ROTATION_XY) * 2.0f * glm::pi<float>());
+                rotateXY(menu.getGaugeValue(Gauges::ROTATION_XY) * PI2);
             }
             if (menu.getGaugeValue(Gauges::ROTATION_YZ) != 0) {
-                rotateYZ(menu.getGaugeValue(Gauges::ROTATION_YZ) * 2.0f * glm::pi<float>());
+                rotateYZ(menu.getGaugeValue(Gauges::ROTATION_YZ) * PI2);
             }
             if (menu.getGaugeValue(Gauges::ROTATION_ZX) != 0) {
-                rotateZX(menu.getGaugeValue(Gauges::ROTATION_ZX) * 2.0f * glm::pi<float>());
+                rotateZX(menu.getGaugeValue(Gauges::ROTATION_ZX) * PI2);
             }
             if (menu.getGaugeValue(Gauges::ROTATION_XW) != 0) {
-                rotateXW(menu.getGaugeValue(Gauges::ROTATION_XW) * 2.0f * glm::pi<float>());
+                rotateXW(menu.getGaugeValue(Gauges::ROTATION_XW) * PI2);
             }
             if (menu.getGaugeValue(Gauges::ROTATION_YW) != 0) {
-                rotateYW(menu.getGaugeValue(Gauges::ROTATION_YW) * 2.0f * glm::pi<float>());
+                rotateYW(menu.getGaugeValue(Gauges::ROTATION_YW) * PI2);
             }
             if (menu.getGaugeValue(Gauges::ROTATION_ZW) != 0) {
-                rotateZW(menu.getGaugeValue(Gauges::ROTATION_ZW) * 2.0f * glm::pi<float>());
+                rotateZW(menu.getGaugeValue(Gauges::ROTATION_ZW) * PI2);
             }
             /* Project from 4D to 3D */
             projectHypercubeTo3D();
