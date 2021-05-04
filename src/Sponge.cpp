@@ -2,6 +2,8 @@
 
 using namespace std;
 
+bool Sponge::killComputation = false;
+
 Sponge::Sponge(){
     frontFaceIndices = { 0,   4,  3,
                          4,   7,  3,
@@ -125,6 +127,8 @@ void Sponge::computeSpongeNormals(const vector<float> &vertices, const vector<ui
                                   vector<float> &normals) {
     normals.resize(vertices.size());
     for (uint32_t i = 0; i < indices.size(); i += 6) {
+        if (Sponge::killComputation) throw WorkerKilled();
+
         glm::vec3 a(
                 getPointAbscissa(vertices, indices[i]),
                 getPointOrdinate(vertices, indices[i]),
@@ -157,6 +161,8 @@ void Sponge::duplicateVertices(vector<float> &vertices, vector<uint32_t> &indice
 
     vector<uint8_t> count(indices.size(), 0);
     for (uint32_t &index: indices) {
+        if (Sponge::killComputation) throw WorkerKilled();
+
         ++count[index];
         if (count[index] > 1) {
             newVertices.push_back(getPointAbscissa(vertices, index));
@@ -189,6 +195,8 @@ void Sponge::addFaces(uint64_t shift, vector<uint32_t> &indices, const vector<Fa
 }
 
 void Sponge::subdivideLine(const vector<float> &line, vector<float> &result) {
+    if (killComputation) throw WorkerKilled();
+
     /* Add the start of the line to the result */
     addPointToVector(result, line, 0);
 

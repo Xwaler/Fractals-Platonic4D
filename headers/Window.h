@@ -10,6 +10,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <thread>
 #include <time.h>
 
 #include "Hypercube.h"
@@ -74,10 +75,15 @@ private:
     vector<float> points[VAO_ID::NUMBER]{};
     vector<float> vertices[VAO_ID::NUMBER]{};
     vector<float> normals[VAO_ID::NUMBER]{};
+    uint32_t currentIndicesCount[VAO_ID::NUMBER]{};
     vector<uint32_t> indices[VAO_ID::NUMBER]{};
 
     Sponge sponge;
-    uint8_t spongeDepth = 2;
+    uint8_t spongeDepth = 1;
+    uint8_t maxSpongeDepth = 3;
+    thread *spongeWorker = nullptr;
+    bool spongeWorkerHasFinished = true;
+    bool vertexComputationUpdated = false;
 
     glm::vec3 cubesColors[VAO_ID::NUMBER]{};
 
@@ -143,10 +149,14 @@ private:
     void create3DCube(VAO_ID ID);
 
     /**
-     * Uses the VAOs points array to create vertices, indices and normals. Then load them onto the gpu buffers
-     * and create pointers to those memory spaces for shaders to access them
-     * @param ID of the VAO used to store the data
+     * Uses the VAOs points array to create vertices, indices and normals
      */
+    void computeVertexArray();
+
+    /**
+     * Load vertices, normals and indices to buffers
+     * @param ID of the VAO used to store the data
+    */
     void fillSpongeVertexArray(VAO_ID ID);
 
     /**

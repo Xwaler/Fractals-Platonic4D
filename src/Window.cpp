@@ -26,9 +26,9 @@ Window::Window() : sponge() {
  */
 void Window::projectHypercubeTo3D() {
     projectedHypercubePoints.clear();
-    float T = glm::tan(fov / 2.0f);
+    float T = 1.0f / glm::tan(fov / 2.0f);
     for (glm::vec4 &V: hypercubePoints) {
-        projectedHypercubePoints.push_back(glm::vec3(V) / (V.w * T));
+        projectedHypercubePoints.push_back(glm::vec3(V) * V.w * T);
     }
 }
 
@@ -74,8 +74,8 @@ void Window::createMengerSpongeLikeHypercube() {
     /* Re-create cubes and sponge vertices */
     for (uint8_t i = 0; i < 8; ++i) {
         create3DCube((VAO_ID) i);
-        fillSpongeVertexArray((VAO_ID) i);
     }
+    spongeWorker = new thread(&Window::computeVertexArray, this);
 }
 
 /**
@@ -103,10 +103,21 @@ void Window::renderMengerSpongeLikeHypercube() {
         loadUniformMat4f(programMain, "view", view);
         loadUniformMat4f(programMain, "projection", projection);
 
+        if (spongeWorker != nullptr && spongeWorkerHasFinished) {
+            spongeWorker->join();
+            spongeWorker = nullptr;
+        }
+
+        if (spongeWorker == nullptr && vertexComputationUpdated) {
+            for (uint8_t ID = 0; ID < 8; ++ID) {
+                fillSpongeVertexArray((VAO_ID) ID);
+            }
+            vertexComputationUpdated = false;
+        }
+
         /* If the user changed the rotation parameters, re-compute hypercube and sponge vertices */
         if (menu.rotationWasModified) {
             menu.rotationWasModified = false;
-
             /* Reset transformations */
             init4DRotations();
             /* Apply all 4D rotations */
@@ -130,18 +141,32 @@ void Window::renderMengerSpongeLikeHypercube() {
             }
             /* Project from 4D to 3D */
             projectHypercubeTo3D();
-            /* Re-create cubes and sponge vertices */
+            /* Re-create cubes */
             for (uint8_t i = 0; i < 8; ++i) {
                 create3DCube((VAO_ID) i);
-                fillSpongeVertexArray((VAO_ID) i);
             }
+
+            spongeDepth = 1;
+            if (spongeWorker != nullptr) {
+                Sponge::killComputation = true;
+                spongeWorker->join();
+            }
+            Sponge::killComputation = false;
+            spongeWorkerHasFinished = false;
+            spongeWorker = new thread(&Window::computeVertexArray, this);
+        }
+
+        if (spongeWorker == nullptr && spongeDepth != maxSpongeDepth) {
+            spongeDepth = min((uint8_t) (spongeDepth + 1), maxSpongeDepth);
+            Sponge::killComputation = false;
+            spongeWorkerHasFinished = false;
+            spongeWorker = new thread(&Window::computeVertexArray, this);
         }
 
         vector<double> distances;
         vector<uint32_t> indexSortedDistance;
-        /* For each cube */
+        /* Compute distances between each cube's center of mass and the camera */
         for (uint8_t i = 0; i < 6; ++i) {
-            /* Compute distances between each point and the camera and save the lowest */
             glm::vec3 centerOfMass(0.0f);
             for (uint16_t j = 0; j < (uint16_t) points[(VAO_ID) i].size(); j += 3) {
                 float *p = &(points[(VAO_ID) i][j]);
@@ -178,7 +203,7 @@ void Window::renderMengerSpongeLikeHypercube() {
 
         /* Draw the center cube */
         /* Set and push vertices color to the gpu through uniform */
-        color = glm::vec4(cubesColors[VAO_ID::PW], menu.getGaugeValue(Gauges::TRANSPARENCY_PW));
+        color = glm::vec4(cubesColors[VAO_ID::PW], menu.getGaugeValue(Gauges::TRANSPARENCY_NW));
         loadUniformVec4f(programMain, "color", color);
         /* Draw from the vertex array */
         drawVAOContents(VAO_ID::PW);
@@ -195,7 +220,7 @@ void Window::renderMengerSpongeLikeHypercube() {
 
         /* Draw the big cube */
         /* Set and push vertices color to the gpu through uniform */
-        color = glm::vec4(cubesColors[VAO_ID::NW], menu.getGaugeValue(Gauges::TRANSPARENCY_NW));
+        color = glm::vec4(cubesColors[VAO_ID::NW], menu.getGaugeValue(Gauges::TRANSPARENCY_PW));
         loadUniformVec4f(programMain, "color", color);
         /* Draw from the vertex array */
         drawVAOContents(VAO_ID::NW);
@@ -337,43 +362,60 @@ void Window::createArraysAndBuffers() {
 }
 
 /**
- * Uses the VAOs points array to create vertices, indices and normals. Then load them onto the gpu buffers
- * and create pointers to those memory spaces for shaders to access them
+ * Uses the VAOs points array to create vertices, indices and normals
+ * @param ID of the VAO used to store the data
+ */
+void Window::computeVertexArray() {
+    try {
+        for (uint8_t ID = 0; ID < 8; ++ID) {
+            vertices[ID].clear();
+            indices[ID].clear();
+            normals[ID].clear();
+            /* Generate Menger's Sponge vertices and indices */
+            sponge.subdivide(spongeDepth, points[ID], vertices[ID], indices[ID]);
+            cout << "VAO[" << (VAO_ID) ID << "]: subdivided to " << vertices[ID].size() << " vertices and " << indices[ID].size()
+                 << " indices" << endl;
+            /* Duplicate vertices used by many "sides" to allow calculation of independent vertices normals */
+            Sponge::duplicateVertices(vertices[ID], indices[ID]);
+            cout << "VAO[" << (VAO_ID) ID << "]: duplicated to " << vertices[ID].size() << " vertices" << endl;
+            /* Compute said normals */
+            Sponge::computeSpongeNormals(vertices[ID], indices[ID], normals[ID]);
+            cout << "VAO[" << (VAO_ID) ID << "]: computed " << normals[ID].size() << " normals" << endl;
+        }
+        vertexComputationUpdated = true;
+        spongeWorkerHasFinished = true;
+    } catch (const std::exception& e) {
+        cout << e.what() << endl;
+        return;
+    }
+}
+
+/**
+ * Load vertices, normals and indices to buffers
  * @param ID of the VAO used to store the data
  */
 void Window::fillSpongeVertexArray(VAO_ID ID) {
-    vertices[ID].clear(); indices[ID].clear(); normals[ID].clear();
-    /* Generate Menger's Sponge vertices and indices */
-    sponge.subdivide(spongeDepth, points[ID], vertices[ID], indices[ID]);
-    cout << "VAO[" << ID << "]: subdivided to " << vertices[ID].size() << " vertices and " << indices[ID].size() << " indices" << endl;
-    /* Duplicate vertices used by many "sides" to allow calculation of independent vertices normals */
-    Sponge::duplicateVertices(vertices[ID], indices[ID]);
-    cout << "VAO[" << ID << "]: duplicated to " << vertices[ID].size() << " vertices" << endl;
-    /* Compute said normals */
-    Sponge::computeSpongeNormals(vertices[ID], indices[ID], normals[ID]);
-    cout << "VAO[" << ID << "]: computed " << normals[ID].size() << " normals" << endl;
-
-    /* Load vertices, normals and indices to buffers */
     /* Bind wanted vertex array */
     glBindVertexArray(VAO[ID]);
     /* Bind vertex buffer to vertex array */
     glBindBuffer(GL_ARRAY_BUFFER, VBO[ID]);
     /* Buffer vertices to vertex buffer */
-    glBufferData(GL_ARRAY_BUFFER, (long) (vertices[ID].size() * sizeof(float)), vertices[ID].data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (long) (vertices[ID].size() * sizeof(float)), vertices[ID].data(), GL_STATIC_DRAW);
     /* Assign the buffer content to vertex array pointer 0 */
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
     glEnableVertexAttribArray(0);
     /* Bind normals buffer to vertex array */
     glBindBuffer(GL_ARRAY_BUFFER, NBO[ID]);
     /* Buffer normals to normal buffer */
-    glBufferData(GL_ARRAY_BUFFER, (long) (normals[ID].size() * sizeof(float)), normals[ID].data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (long) (normals[ID].size() * sizeof(float)), normals[ID].data(), GL_STATIC_DRAW);
     /* Assign the buffer content to vertex array pointer 1 */
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
     glEnableVertexAttribArray(1);
     /* Bind indices buffer to vertex array */
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[ID]);
     /* Buffer indices to vertex buffer */
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long) (indices[ID].size() * sizeof(uint32_t)), indices[ID].data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long) (indices[ID].size() * sizeof(uint32_t)), indices[ID].data(), GL_STATIC_DRAW);
+    currentIndicesCount[ID] = indices[ID].size();
 }
 
 /**
@@ -412,12 +454,12 @@ void Window::drawVAOContents(VAO_ID ID) {
     glBindVertexArray(VAO[ID]);
     glUseProgram(programMain);
 
-    /* Compute model matrix, scale down to 15% size */
+    /* Model matrix */
     glm::mat4 model = glm::mat4(1.0f);
     /* Push model matrix to gpu through uniform */
     loadUniformMat4f(programMain, "model", model);
     /* Draw vertices and create fragments with triangles */
-    glDrawElements(GL_TRIANGLES, (int32_t) indices[ID].size(), GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_TRIANGLES, (int32_t) currentIndicesCount[ID], GL_UNSIGNED_INT, nullptr);
 }
 
 /**

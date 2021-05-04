@@ -8,12 +8,21 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <future>
 
 #include "vectorTools.h"
 
 using namespace std;
 
+struct WorkerKilled : public exception {
+    const char * what () const throw () {
+        return "SpongeWorker was purposely killed";
+    }
+};
+
 class Sponge {
+public:
+    static bool killComputation;
 private:
     std::vector<uint8_t> frontFaceIndices;
     std::vector<uint8_t> topFaceIndices;
