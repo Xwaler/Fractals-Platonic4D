@@ -13,9 +13,21 @@
 #include "font.h"
 
 enum Gauges {
-    TRANSPARENCY_OUTER = 0,
-    TRANSPARENCY_INNER = 1,
-    GAUGE_NUMBER = 2,
+    TRANSPARENCY_PX = 0,
+    TRANSPARENCY_NX = 1,
+    TRANSPARENCY_PY = 2,
+    TRANSPARENCY_NY = 3,
+    TRANSPARENCY_PZ = 4,
+    TRANSPARENCY_NZ = 5,
+    TRANSPARENCY_PW = 6,
+    TRANSPARENCY_NW = 7,
+    ROTATION_XY = 8,
+    ROTATION_YZ = 9,
+    ROTATION_ZX = 10,
+    ROTATION_XW = 11,
+    ROTATION_YW = 12,
+    ROTATION_ZW = 13,
+    GAUGE_NUMBER = 14,
 };
 
 class ShapesDrawer {
@@ -28,6 +40,8 @@ public:
 };
 
 class Cursor {
+public:
+    bool triggerVerticesReload;
 private:
     std::vector<float> &appearance;
     uint16_t abscissa;
@@ -41,7 +55,7 @@ private:
     void restoreBackground();
 
 public:
-    Cursor(std::vector<float> &appearance, uint16_t abscissa, uint16_t ordinate, uint16_t trackLength, uint16_t semiDiagonalLength, float defaultValue);
+    Cursor(std::vector<float> &appearance, uint16_t abscissa, uint16_t ordinate, uint16_t trackLength, uint16_t semiDiagonalLength, float defaultValue, bool triggerVerticesReload);
 
     void move(uint16_t newAbscissa);
 
@@ -53,14 +67,28 @@ public:
 class Menu {
 public:
     bool isLeftTabUp;
+    bool rotationWasModified = false;
 private:
     std::vector<float> appearance;
     std::vector<Cursor> cursors;
     Cursor* selected = nullptr;
-    uint16_t gaugeProperties[Gauges::GAUGE_NUMBER][5] {
-            /* top left abscissa, top left ordinate, bottom right abscissa, bottom right ordinate, default cursor value in percents */
-            { 10, 20, 144, 10, 70 },
-            { 10, 50, 144, 10, 100 },
+    uint16_t gaugeProperties[Gauges::GAUGE_NUMBER][6] {
+            /* top left abscissa, top left ordinate, width, height, default cursor value in percents, bool must reload vertices */
+            { 10, 20,  120, 10, 70, 0},
+            { 10, 50,  120, 10, 70, 0 },
+            { 10, 80,  120, 10, 70, 0 },
+            { 10, 110, 120, 10, 70, 0 },
+            { 10, 140, 120, 10, 70, 0 },
+            { 10, 170, 120, 10, 70, 0 },
+            { 10, 200, 120, 10, 100, 0 },
+            { 10, 230, 120, 10, 0, 0 },
+
+            { MenuProperties::width - 130, 20,  120, 10, 0, 1 },
+            { MenuProperties::width - 130, 50,  120, 10, 0, 1 },
+            { MenuProperties::width - 130, 80,  120, 10, 0, 1 },
+            { MenuProperties::width - 130, 110, 120, 10, 0, 1 },
+            { MenuProperties::width - 130, 140, 120, 10, 0, 1 },
+            { MenuProperties::width - 130, 170, 120, 10, 0, 1 },
     };
 
 public:

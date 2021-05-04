@@ -12,6 +12,7 @@
 #include <vector>
 #include <time.h>
 
+#include "Hypercube.h"
 #include "Sponge.h"
 #include "Menu.h"
 
@@ -22,10 +23,16 @@ using namespace std;
  * NUMBER is the count of useful members in this enum
  */
 enum VAO_ID {
-    CUBE = 0,
-    TRAPEZE = 1,
-    OVERLAY = 2,
-    NUMBER = 3,
+    PX = 0,
+    NX = 1,
+    PY = 2,
+    NY = 3,
+    PZ = 4,
+    NZ = 5,
+    PW = 6,
+    NW = 7,
+    OVERLAY = 8,
+    NUMBER = 9,
 };
 
 enum TEXTURE_ID {
@@ -36,11 +43,12 @@ enum TEXTURE_ID {
 /**
  * Wrapping class for hypercube data management and OpenGL API interaction
  */
-class Window {
+class Window : protected Hypercube {
 private:
     static uint16_t WIDTH;
     static uint16_t HEIGHT;
     static float cameraDistance;
+    static float minCameraDistance;
     static double scroll_speed;
     static bool leftButtonPressed;
     static bool wireframe;
@@ -53,6 +61,7 @@ private:
     double mouse_pos_y = 0.0;
     float horizontal_angle = 0.0f;
     float vertical_angle = 0.0f;
+    const float fov = glm::pi<float>() / 4.0f;
 
     int8_t targetFPS = 60;
     double deltaTime = 0.0f;
@@ -61,15 +70,16 @@ private:
     GLFWwindow* window{};
     uint32_t programMain = 0, programTexture = 0;
     uint32_t VAO[VAO_ID::NUMBER]{}, VBO[VAO_ID::NUMBER]{}, NBO[VAO_ID::NUMBER]{}, IBO[VAO_ID::NUMBER]{};
+    vector<vector<uint8_t>> cubesIndices;
     vector<float> points[VAO_ID::NUMBER]{};
     vector<float> vertices[VAO_ID::NUMBER]{};
     vector<float> normals[VAO_ID::NUMBER]{};
     vector<uint32_t> indices[VAO_ID::NUMBER]{};
 
     Sponge sponge;
+    uint8_t spongeDepth = 2;
 
-    vector<glm::vec3> transparentSidesPosition;
-    vector<glm::mat4> transparentSidesModelMatrix;
+    glm::vec3 cubesColors[VAO_ID::NUMBER]{};
 
     static Menu menu;
     uint32_t textures[TEXTURE_ID::NUMBER_TEXTURE]{};
@@ -80,12 +90,12 @@ public:
     ~Window() = default;
 
     /**
-     * Initialize points, create corresponding vertices, normals and indices and push them to the GPU
+     * Initialize hypercube vertices, normals and indices and push them to the GPU
      */
     void createMengerSpongeLikeHypercube();
 
     /**
-     * Render loop, compute view and projection matrix then calls drawScene for each VAO
+     * Render loop, compute view and projection matrix then calls drawVAOContents for each VAO
      */
     void renderMengerSpongeLikeHypercube();
 
@@ -122,6 +132,17 @@ private:
     void createArraysAndBuffers();
 
     /**
+     * Project the 4D hypercube coordinates to 3D space
+     */
+    void projectHypercubeTo3D();
+
+    /**
+     * Link 3D points to form a cube using stored cubesIndices
+     * @param ID
+     */
+    void create3DCube(VAO_ID ID);
+
+    /**
      * Uses the VAOs points array to create vertices, indices and normals. Then load them onto the gpu buffers
      * and create pointers to those memory spaces for shaders to access them
      * @param ID of the VAO used to store the data
@@ -155,15 +176,10 @@ private:
     static void loadUniform1f(uint32_t program, const char *name, float value);
 
     /**
-     * Initialize the faces position vector used to determine those closest to the camera
-     */
-    void prepareBackToFrontDrawing();
-
-    /**
      * Binds the selected VAO and draw it's content
      * @param ID of the VAO to draw
      */
-    void drawScene(VAO_ID ID);
+    void drawVAOContents(VAO_ID ID);
 
     /**
      * Draw the overlay texture to the viewport

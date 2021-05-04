@@ -19,7 +19,7 @@ light lights[2] = {
 };
 
 void main() {
-    if (vColor.a <= 0.01f) {
+    if (vColor.a == 0.0f) {
         discard;
     }
 

@@ -51,10 +51,10 @@ void Cursor::restoreBackground() {
     );
 }
 
-Cursor::Cursor(std::vector<float> &appearance, uint16_t abscissa, uint16_t ordinate, uint16_t trackLength, uint16_t semiDiagonalLength, float defaultValue)
+Cursor::Cursor(std::vector<float> &appearance, uint16_t abscissa, uint16_t ordinate, uint16_t trackLength, uint16_t semiDiagonalLength, float defaultValue, bool triggerVerticesReload)
         : appearance(appearance), abscissa(abscissa + semiDiagonalLength + (uint16_t) ((float) (trackLength - 2 * semiDiagonalLength) * defaultValue)), ordinate(ordinate),
           startAbscissaTrack(abscissa + semiDiagonalLength), endAbscissaTrack(abscissa + trackLength - semiDiagonalLength),
-          semiDiagonalLength(semiDiagonalLength) {
+          semiDiagonalLength(semiDiagonalLength), triggerVerticesReload(triggerVerticesReload) {
     draw();
 }
 
@@ -87,8 +87,22 @@ void Menu::writeGaugeText() {
     for (uint16_t i = 0; i < Gauges::GAUGE_NUMBER; ++i) {
         std::string text;
         switch (i) {
-            case Gauges::TRANSPARENCY_OUTER: text = "Outer transparency"; break;
-            case Gauges::TRANSPARENCY_INNER: text = "Inner transparency"; break;
+            case Gauges::TRANSPARENCY_PX: text = "PX transparency"; break;
+            case Gauges::TRANSPARENCY_NX: text = "NX transparency"; break;
+            case Gauges::TRANSPARENCY_PY: text = "PY transparency"; break;
+            case Gauges::TRANSPARENCY_NY: text = "NY transparency"; break;
+            case Gauges::TRANSPARENCY_PZ: text = "PZ transparency"; break;
+            case Gauges::TRANSPARENCY_NZ: text = "NZ transparency"; break;
+            case Gauges::TRANSPARENCY_PW: text = "PW transparency"; break;
+            case Gauges::TRANSPARENCY_NW: text = "NW transparency"; break;
+
+            case Gauges::ROTATION_XY: text = "XY rotation"; break;
+            case Gauges::ROTATION_YZ: text = "YZ rotation"; break;
+            case Gauges::ROTATION_ZX: text = "ZX rotation"; break;
+            case Gauges::ROTATION_XW: text = "XW rotation"; break;
+            case Gauges::ROTATION_YW: text = "YW rotation"; break;
+            case Gauges::ROTATION_ZW: text = "ZW rotation"; break;
+
             default: break;
         }
         writeLetters(appearance, text, gaugeProperties[i][0], gaugeProperties[i][1] - 10);
@@ -100,7 +114,8 @@ void Menu::createCursors() {
         cursors.emplace_back(
                 appearance, gaugeProperty[0], gaugeProperty[1],
                 gaugeProperty[2], gaugeProperty[3],
-                (float) gaugeProperty[4] / 100.0f
+                (float) gaugeProperty[4] / 100.0f,
+                (bool) gaugeProperty[5]
         );
     }
 }
@@ -132,7 +147,9 @@ void Menu::handleKeyPress(uint32_t action, uint16_t abscissa, uint16_t ordinate)
             }
         }
     } else if (action == GLFW_RELEASE) {
-        selected = nullptr;
+        if (selected != nullptr) {
+            selected = nullptr;
+        }
     }
 }
 
@@ -140,6 +157,9 @@ void Menu::handleMouseMovement(uint16_t abscissa, uint16_t ordinate) {
     if (isInputCaptured()) {
         if (MenuProperties::isConstrained(abscissa, 0)) {
             selected->move(abscissa);
+            if (selected->triggerVerticesReload) {
+                rotationWasModified = true;
+            }
         }
     }
 }

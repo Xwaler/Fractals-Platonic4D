@@ -4,8 +4,9 @@ using namespace std;
 
 uint16_t Window::WIDTH = 1280;
 uint16_t Window::HEIGHT = 720;
-float Window::cameraDistance = 3.0f;
-double Window::scroll_speed = 0.2;
+float Window::cameraDistance = 20.0f;
+float Window::minCameraDistance = 1.0f;
+double Window::scroll_speed = 1.0f;
 bool Window::leftButtonPressed = false;
 bool Window::wireframe = false;
 double Window::xpos = 0.0;
@@ -21,26 +22,67 @@ Window::Window() : sponge() {
 }
 
 /**
- * Initialize hypercube points, create corresponding vertices, normals and indices and push them to the GPU
+ * Project the 4D hypercube coordinates to 3D space
  */
-void Window::createMengerSpongeLikeHypercube() {
-    points[VAO_ID::CUBE] = {
-            0.0f, 0.0f, 0.0f,  1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,
-    };
-    fillSpongeVertexArray(VAO_ID::CUBE);
-    points[VAO_ID::TRAPEZE] = {
-            0.00f, 0.00f, 0.00f,  1.00f, 0.00f, 0.00f,  0.00f, 1.00f, 0.00f,  1.00f, 1.00f, 0.00f,
-            0.25f, 0.25f, 0.25f,  0.75f, 0.25f, 0.25f,  0.25f, 0.75f, 0.25f,  0.75f, 0.75f, 0.25f,
-    };
-    fillSpongeVertexArray(VAO_ID::TRAPEZE);
-    prepareBackToFrontDrawing();
+void Window::projectHypercubeTo3D() {
+    projectedHypercubePoints.clear();
+    float T = glm::tan(fov / 2.0f);
+    for (glm::vec4 &V: hypercubePoints) {
+        projectedHypercubePoints.push_back(glm::vec3(V) / (V.w * T));
+    }
 }
 
 /**
- * Render loop, compute view and projection matrix then calls drawScene for each VAO
+ * Link 3D points to form a cube using stored cubesIndices
+ * @param ID
+ */
+void Window::create3DCube(VAO_ID ID) {
+    points[ID].clear();
+    for (uint8_t index: cubesIndices[ID]) {
+        glm::vec3 p = projectedHypercubePoints[index];
+        points[ID].push_back(p.x);
+        points[ID].push_back(p.y);
+        points[ID].push_back(p.z);
+    }
+}
+
+/**
+ * Initialize hypercube vertices, normals and indices and push them to the GPU
+ */
+void Window::createMengerSpongeLikeHypercube() {
+    cubesIndices = {
+            { 1, 3, 5, 7, 9, 11, 13, 15 },
+            { 2, 0, 6, 4, 10, 8, 14, 12 },
+            { 4, 5, 6, 7, 12, 13, 14, 15 },
+            { 1, 0, 3, 2, 9, 8, 11, 10 },
+            { 6, 7, 2, 3, 14, 15, 10, 11 },
+            { 5, 4, 1, 0, 13, 12, 9, 8 },
+            { 0, 1, 2, 3, 4, 5, 6, 7 },
+            { 8, 9, 10, 11, 12, 13, 14, 15 },
+    };
+    cubesColors[VAO_ID::PX] = glm::vec3(235, 158, 160) / 255.0f;
+    cubesColors[VAO_ID::NX] = glm::vec3(36, 106, 222) / 255.0f;
+    cubesColors[VAO_ID::PY] = glm::vec3(124, 41, 141) / 255.0f;
+    cubesColors[VAO_ID::NY] = glm::vec3(247, 246, 76) / 255.0f;
+    cubesColors[VAO_ID::PZ] = glm::vec3(227, 222, 213) / 255.0f;
+    cubesColors[VAO_ID::NZ] = glm::vec3(254, 165, 57) / 255.0f;
+    cubesColors[VAO_ID::PW] = glm::vec3(106, 255, 188) / 255.0f;
+    cubesColors[VAO_ID::NW] = glm::vec3(204, 101, 42) / 255.0f;
+
+    /* Project from 4D to 3D */
+    projectHypercubeTo3D();
+    /* Re-create cubes and sponge vertices */
+    for (uint8_t i = 0; i < 8; ++i) {
+        create3DCube((VAO_ID) i);
+        fillSpongeVertexArray((VAO_ID) i);
+    }
+}
+
+/**
+ * Render loop, compute view and projection matrix then calls drawVAOContents for each VAO
  */
 void Window::renderMengerSpongeLikeHypercube() {
+    glm::vec4 color;
     while (continueLoop()) {
         /* Draw the background and clear OpenGL render bits */
         clear();
@@ -56,22 +98,107 @@ void Window::renderMengerSpongeLikeHypercube() {
 
         /* Initialize view matrix from camera and perspective projection matrix */
         glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0, 1.0f, 0.0f));
-        glm::mat4 projection = glm::perspective(glm::pi<float>() / 4.0f, (float) WIDTH / (float) HEIGHT, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(fov, (float) WIDTH / (float) HEIGHT, 0.1f, 100.0f);
         /* Push view and projection matrix to the gpu through uniforms */
         loadUniformMat4f(programMain, "view", view);
         loadUniformMat4f(programMain, "projection", projection);
 
-        /* Set and push vertices color to the gpu through uniform */
-        glm::vec4 color = glm::vec4(1.0f, 0.0f, 0.0f, menu.getGaugeValue(Gauges::TRANSPARENCY_INNER));
-        loadUniformVec4f(programMain, "color", color);
-        /* Draw the scene from the cube vertex array */
-        drawScene(VAO_ID::CUBE);
+        /* If the user changed the rotation parameters, re-compute hypercube and sponge vertices */
+        if (menu.rotationWasModified) {
+            menu.rotationWasModified = false;
 
+            /* Reset transformations */
+            init4DRotations();
+            /* Apply all 4D rotations */
+            if (menu.getGaugeValue(Gauges::ROTATION_XY) != 0) {
+                rotateXY(menu.getGaugeValue(Gauges::ROTATION_XY) * 2.0f * glm::pi<float>());
+            }
+            if (menu.getGaugeValue(Gauges::ROTATION_YZ) != 0) {
+                rotateYZ(menu.getGaugeValue(Gauges::ROTATION_YZ) * 2.0f * glm::pi<float>());
+            }
+            if (menu.getGaugeValue(Gauges::ROTATION_ZX) != 0) {
+                rotateZX(menu.getGaugeValue(Gauges::ROTATION_ZX) * 2.0f * glm::pi<float>());
+            }
+            if (menu.getGaugeValue(Gauges::ROTATION_XW) != 0) {
+                rotateXW(menu.getGaugeValue(Gauges::ROTATION_XW) * 2.0f * glm::pi<float>());
+            }
+            if (menu.getGaugeValue(Gauges::ROTATION_YW) != 0) {
+                rotateYW(menu.getGaugeValue(Gauges::ROTATION_YW) * 2.0f * glm::pi<float>());
+            }
+            if (menu.getGaugeValue(Gauges::ROTATION_ZW) != 0) {
+                rotateZW(menu.getGaugeValue(Gauges::ROTATION_ZW) * 2.0f * glm::pi<float>());
+            }
+            /* Project from 4D to 3D */
+            projectHypercubeTo3D();
+            /* Re-create cubes and sponge vertices */
+            for (uint8_t i = 0; i < 8; ++i) {
+                create3DCube((VAO_ID) i);
+                fillSpongeVertexArray((VAO_ID) i);
+            }
+        }
+
+        vector<double> distances;
+        vector<uint32_t> indexSortedDistance;
+        /* For each cube */
+        for (uint8_t i = 0; i < 6; ++i) {
+            /* Compute distances between each point and the camera and save the lowest */
+            glm::vec3 centerOfMass(0.0f);
+            for (uint16_t j = 0; j < (uint16_t) points[(VAO_ID) i].size(); j += 3) {
+                float *p = &(points[(VAO_ID) i][j]);
+                centerOfMass += glm::vec3(*(p + 0), *(p + 1), *(p + 2));
+            }
+            distances.push_back(glm::length(cameraPosition - centerOfMass / (float) points[(VAO_ID) i].size()));
+        }
+        /* Initialize indices for synchronised sorting */
+        for (uint32_t i = 0; i < distances.size(); ++i) {
+            indexSortedDistance.push_back(i);
+        }
+        /* Sorts distances and indices together so that we can access our model matrices by index */
+        for (uint32_t i = 0; i < distances.size(); ++i) {
+            for (uint32_t j = i; j < distances.size(); ++j) {
+                if (distances[i] < distances[j]) {
+                    double tmpDistance = distances[i]; uint32_t tmpIndex = indexSortedDistance[i];
+                    distances[i] = distances[j];
+                    distances[j] = tmpDistance;
+                    indexSortedDistance[i] = indexSortedDistance[j];
+                    indexSortedDistance[j] = tmpIndex;
+                }
+            }
+        }
+
+        /* Draw the first half faces in from back to front, following the sorted indices/distances */
+        for (uint32_t i = 0; i < indexSortedDistance.size() / 2; ++i) {
+            uint8_t index = indexSortedDistance[i];
+            /* Set and push vertices color to the gpu through uniform */
+            color = glm::vec4(cubesColors[(VAO_ID) index], menu.getGaugeValue((Gauges) index));
+            loadUniformVec4f(programMain, "color", color);
+            /* Draw from the vertex array */
+            drawVAOContents((VAO_ID) index);
+        }
+
+        /* Draw the center cube */
         /* Set and push vertices color to the gpu through uniform */
-        color = glm::vec4(0.5f, 0.5f, 0.5f, menu.getGaugeValue(Gauges::TRANSPARENCY_OUTER));
+        color = glm::vec4(cubesColors[VAO_ID::PW], menu.getGaugeValue(Gauges::TRANSPARENCY_PW));
         loadUniformVec4f(programMain, "color", color);
-        /* Draw the scene from the trapeze vertex array */
-        drawScene(VAO_ID::TRAPEZE);
+        /* Draw from the vertex array */
+        drawVAOContents(VAO_ID::PW);
+
+        /* Draw the second half faces in from back to front, following the sorted indices/distances */
+        for (uint32_t i = indexSortedDistance.size() / 2; i < indexSortedDistance.size(); ++i) {
+            uint8_t index = indexSortedDistance[i];
+            /* Set and push vertices color to the gpu through uniform */
+            color = glm::vec4(cubesColors[(VAO_ID) index], menu.getGaugeValue((Gauges) index));
+            loadUniformVec4f(programMain, "color", color);
+            /* Draw from the vertex array */
+            drawVAOContents((VAO_ID) index);
+        }
+
+        /* Draw the big cube */
+        /* Set and push vertices color to the gpu through uniform */
+        color = glm::vec4(cubesColors[VAO_ID::NW], menu.getGaugeValue(Gauges::TRANSPARENCY_NW));
+        loadUniformVec4f(programMain, "color", color);
+        /* Draw from the vertex array */
+        drawVAOContents(VAO_ID::NW);
 
         /* Draw overlay over the viewport */
         drawOverlay();
@@ -215,8 +342,9 @@ void Window::createArraysAndBuffers() {
  * @param ID of the VAO used to store the data
  */
 void Window::fillSpongeVertexArray(VAO_ID ID) {
+    vertices[ID].clear(); indices[ID].clear(); normals[ID].clear();
     /* Generate Menger's Sponge vertices and indices */
-    sponge.subdivide(3, points[ID], vertices[ID], indices[ID]);
+    sponge.subdivide(spongeDepth, points[ID], vertices[ID], indices[ID]);
     cout << "VAO[" << ID << "]: subdivided to " << vertices[ID].size() << " vertices and " << indices[ID].size() << " indices" << endl;
     /* Duplicate vertices used by many "sides" to allow calculation of independent vertices normals */
     Sponge::duplicateVertices(vertices[ID], indices[ID]);
@@ -231,21 +359,21 @@ void Window::fillSpongeVertexArray(VAO_ID ID) {
     /* Bind vertex buffer to vertex array */
     glBindBuffer(GL_ARRAY_BUFFER, VBO[ID]);
     /* Buffer vertices to vertex buffer */
-    glBufferData(GL_ARRAY_BUFFER, (long) (vertices[ID].size() * sizeof(float)), vertices[ID].data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (long) (vertices[ID].size() * sizeof(float)), vertices[ID].data(), GL_DYNAMIC_DRAW);
     /* Assign the buffer content to vertex array pointer 0 */
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
     glEnableVertexAttribArray(0);
     /* Bind normals buffer to vertex array */
     glBindBuffer(GL_ARRAY_BUFFER, NBO[ID]);
     /* Buffer normals to normal buffer */
-    glBufferData(GL_ARRAY_BUFFER, (long) (normals[ID].size() * sizeof(float)), normals[ID].data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (long) (normals[ID].size() * sizeof(float)), normals[ID].data(), GL_DYNAMIC_DRAW);
     /* Assign the buffer content to vertex array pointer 1 */
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
     glEnableVertexAttribArray(1);
     /* Bind indices buffer to vertex array */
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[ID]);
     /* Buffer indices to vertex buffer */
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long) (indices[ID].size() * sizeof(uint32_t)), indices[ID].data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long) (indices[ID].size() * sizeof(uint32_t)), indices[ID].data(), GL_DYNAMIC_DRAW);
 }
 
 /**
@@ -276,78 +404,20 @@ void Window::loadUniform1f(uint32_t program, const char *name, float value) {
 }
 
 /**
- * Initialize the faces position vector used to determine those closest to the camera
- */
-void Window::prepareBackToFrontDrawing() {
-    glm::vec4 center(0.5f, 0.5f, 0.125f, 1.0f);
-    for (uint8_t i = 0; i < 4; ++i) {
-        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), (float) i * glm::pi<float>() / 2.0f, glm::vec3(0.0f, 1.0f, 0.0f)) *
-                                   glm::translate(glm::mat4(1), glm::vec3(-0.5));
-        transparentSidesModelMatrix.push_back(rotationMatrix);
-        transparentSidesPosition.emplace_back(rotationMatrix * center);
-    }
-    for (int8_t i = -1; i < 2; i += 2) {
-        glm::mat4 modelMatrix = glm::rotate(glm::mat4(1.0f), (float) i * glm::pi<float>() / 2.0f, glm::vec3(1.0f, 0.0f, 0.0f)) *
-                                glm::translate(glm::mat4(1), glm::vec3(-0.5));
-        transparentSidesModelMatrix.push_back(modelMatrix);
-        transparentSidesPosition.emplace_back(modelMatrix * center);
-    }
-}
-
-/**
  * Binds the selected VAO and draw it's content
  * @param ID of the VAO to draw
  */
-void Window::drawScene(VAO_ID ID) {
-    /* Bind the trapeze vertex array object */
+void Window::drawVAOContents(VAO_ID ID) {
+    /* Bind vertex array object */
     glBindVertexArray(VAO[ID]);
     glUseProgram(programMain);
 
-    switch (ID) {
-        case VAO_ID::CUBE: {
-            // Compute model matrix for one trapeze, translate to center the object then downscale it by 2
-            glm::mat4 model =
-                    glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)) *
-                    glm::translate(glm::mat4(1), glm::vec3(-0.5));
-            // Push model matrix to gpu through uniform
-            loadUniformMat4f(programMain, "model", model);
-            // Draw vertices and create fragments with triangles
-            glDrawElements(GL_TRIANGLES, (int32_t) (indices[ID].size()), GL_UNSIGNED_INT, nullptr);
-            break;
-        }
-        case VAO_ID::TRAPEZE: {
-            /* Compute distances between each side and the camera */
-            vector<double> distance; vector<uint32_t> indexSortedDistance;
-            for (glm::vec3 &sidePosition: transparentSidesPosition) {
-                distance.push_back(glm::length(cameraPosition - sidePosition));
-            }
-            /* Initialize indices for synchronised sorting */
-            for (uint32_t i = 0; i < distance.size(); ++i) {
-                indexSortedDistance.push_back(i);
-            }
-            /* Sorts distances and indices together so that we can access our model matrices by index */
-            for (uint32_t i = 0; i < distance.size(); ++i) {
-                for (uint32_t j = i; j < distance.size(); ++j) {
-                    if (distance[i] < distance[j]) {
-                        double tmpDistance = distance[i]; uint32_t tmpIndex = indexSortedDistance[i];
-                        distance[i] = distance[j];
-                        distance[j] = tmpDistance;
-                        indexSortedDistance[i] = indexSortedDistance[j];
-                        indexSortedDistance[j] = tmpIndex;
-                    }
-                }
-            }
-            /* Draw the faces from back to front, following the sorted indices/distances */
-            for (uint32_t index: indexSortedDistance) {
-                // Push model matrix to gpu through uniform
-                loadUniformMat4f(programMain, "model", transparentSidesModelMatrix[index]);
-                // Draw vertices and create fragments with triangles
-                glDrawElements(GL_TRIANGLES, (int32_t) indices[ID].size(), GL_UNSIGNED_INT, nullptr);
-            }
-            break;
-        }
-        default: cout << "Unknown VAO_ID = " << ID << endl;
-    }
+    /* Compute model matrix, scale down to 15% size */
+    glm::mat4 model = glm::mat4(1.0f);
+    /* Push model matrix to gpu through uniform */
+    loadUniformMat4f(programMain, "model", model);
+    /* Draw vertices and create fragments with triangles */
+    glDrawElements(GL_TRIANGLES, (int32_t) indices[ID].size(), GL_UNSIGNED_INT, nullptr);
 }
 
 /**
@@ -581,7 +651,7 @@ void Window::mouse_button_callback(GLFWwindow* w, int button, int action, int mo
  * @param yoffset is the rotation difference of the movement in the Y axis
  */
 void Window::scroll_callback(GLFWwindow* w, double xoffset, double yoffset) {
-    cameraDistance = glm::max(0.5f, cameraDistance - (float) (yoffset * scroll_speed));
+    cameraDistance = glm::max(minCameraDistance, cameraDistance - (float) (yoffset * scroll_speed));
 }
 
 /**
