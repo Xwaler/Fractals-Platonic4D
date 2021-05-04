@@ -57,6 +57,8 @@ private:
 public:
     Cursor(std::vector<float> &appearance, uint16_t abscissa, uint16_t ordinate, uint16_t trackLength, uint16_t semiDiagonalLength, float defaultValue, bool triggerVerticesReload);
 
+    bool willMove(uint16_t newAbscissa) const;
+
     void move(uint16_t newAbscissa);
 
     float getValue() const;

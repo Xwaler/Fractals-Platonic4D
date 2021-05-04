@@ -58,6 +58,10 @@ Cursor::Cursor(std::vector<float> &appearance, uint16_t abscissa, uint16_t ordin
     draw();
 }
 
+bool Cursor::willMove(uint16_t newAbscissa) const {
+    return newAbscissa != abscissa;
+}
+
 void Cursor::move(uint16_t newAbscissa) {
     restoreBackground();
     abscissa = glm::max(glm::min(newAbscissa, endAbscissaTrack), startAbscissaTrack);
@@ -155,7 +159,7 @@ void Menu::handleKeyPress(uint32_t action, uint16_t abscissa, uint16_t ordinate)
 
 void Menu::handleMouseMovement(uint16_t abscissa, uint16_t ordinate) {
     if (isInputCaptured()) {
-        if (MenuProperties::isConstrained(abscissa, 0)) {
+        if (MenuProperties::isConstrained(abscissa, 0) && selected->willMove(abscissa)) {
             selected->move(abscissa);
             if (selected->triggerVerticesReload) {
                 rotationWasModified = true;
