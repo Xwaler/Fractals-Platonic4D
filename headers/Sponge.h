@@ -15,10 +15,10 @@
 using namespace std;
 
 /**
- * Custom exception class used to kill the sponge computing thread
+ * Exception used to interrupt the computation of vertices if the result isn't needed anymore
  */
-class WorkerKilled : public exception {
-    const char* what() const throw () {
+struct WorkerKilled : public exception {
+    const char * what () const throw () {
         return "SpongeWorker was purposely killed";
     }
 };

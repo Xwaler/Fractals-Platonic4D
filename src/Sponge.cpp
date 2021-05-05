@@ -119,6 +119,7 @@ Sponge::Sponge(){
 
 void Sponge::subdivide(uint8_t depth, const vector<float> &parallelepiped, vector<float> &vertices,
                        vector<uint32_t> &indices) {
+    /* Indicates that every single faces are visible by the camera */
     vector<Faces> apparentFaces = {Back, Bottom, Right, Top, Left, Front};
     recursiveSubdivide(depth, parallelepiped, vertices, indices, apparentFaces);
 }
@@ -184,6 +185,7 @@ void Sponge::addFace(uint64_t shift, vector<uint32_t> &indices, Faces face) {
 }
 
 void Sponge::addFaces(uint64_t shift, vector<uint32_t> &indices, const vector<Faces> &apparentFaces) {
+    /* Add each apparent faces */
     for (Faces face : apparentFaces) {
         addFace(shift, indices, face);
     }
@@ -350,7 +352,7 @@ void Sponge::subdivideChild(uint8_t depth, vector<float> &vertices, vector<uint3
         addPointToVector(childParallelepiped, parentVertices, index);
     }
 
-    /* Indicate which faces could be worth drawing */
+    /* Check if the apparent faces aren't hidden because of the a neighbor of the parent cube */
     vector<Faces> childApparentFaces;
     for (Faces face : childPossiblyApparentFaces) {
         if (contains(parentApparentFaces, face)) {
@@ -377,6 +379,8 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* Speaking inside the parent parallelepiped, X=0, Y=0, Z=2 (front face, bottom row, last column) */
         {
             vector<uint8_t> childIndices = {0, 1, 4, 5, 16, 17, 20, 21};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+             * faces */
             vector<Faces> childPossiblyApparentFaces = {Back, Left, Bottom};
             vector<Faces> childMandatoryFaces;
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
@@ -386,7 +390,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=1, Y=0, Z=2 */
         {
             vector<uint8_t> childIndices = {1, 2, 5, 6, 17, 18, 21, 22};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+             * faces */
             vector<Faces> childPossiblyApparentFaces = {Back, Bottom};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+             * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Top, Front};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -395,6 +403,8 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=2, Y=0, Z=2 */
         {
             vector<uint8_t> childIndices = {2, 3, 6, 7, 18, 19, 22, 23};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Back, Bottom, Right};
             vector<Faces> childMandatoryFaces;
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
@@ -404,7 +414,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=2, Y=0, Z=1 */
         {
             vector<uint8_t> childIndices = {18, 19, 22, 23, 34, 35, 38, 39};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Bottom, Right};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+            * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Top, Left};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -413,7 +427,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=0, Y=0, Z=1 */
         {
             vector<uint8_t> childIndices = {16, 17, 20, 21, 32, 33, 36, 37};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Left, Bottom};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+             * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Top, Right};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -422,6 +440,8 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=0, Y=0, Z=0 */
         {
             vector<uint8_t> childIndices = {32, 33, 36, 37, 48, 49, 52, 53};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Left, Bottom, Front};
             vector<Faces> childMandatoryFaces;
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
@@ -431,7 +451,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=1, Y=0, Z=0 */
         {
             vector<uint8_t> childIndices = {33, 34, 37, 38, 49, 50, 53, 54};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Bottom, Front};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+            * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Top, Back};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -440,6 +464,8 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=2, Y=0, Z=0 */
         {
             vector<uint8_t> childIndices = {34, 35, 38, 39, 50, 51, 54, 55};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Bottom, Front, Right};
             vector<Faces> childMandatoryFaces;
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
@@ -449,7 +475,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=2, Y=1, Z=0 */
         {
             vector<uint8_t> childIndices = {38, 39, 42, 43, 54, 55, 58, 59};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Front, Right};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+            * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Back, Left};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -458,7 +488,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=0, Y=1, Z=0 */
         {
             vector<uint8_t> childIndices = {36, 37, 40, 41, 52, 53, 56, 57};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Front, Left};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+             * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Back, Right};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -467,7 +501,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=0, Y=1, Z=2 */
         {
             vector<uint8_t> childIndices = {4, 5, 8, 9, 20, 21, 24, 25};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Back, Left};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+            * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Front, Right};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -476,7 +514,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=2, Y=1, Z=2 */
         {
             vector<uint8_t> childIndices = {6, 7, 10, 11, 22, 23, 26, 27};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Back, Right};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+            * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Front, Left};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -485,6 +527,8 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=2, Y=2, Z=2 */
         {
             vector<uint8_t> childIndices = {10, 11, 14, 15, 26, 27, 30, 31};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Back, Right, Top};
             vector<Faces> childMandatoryFaces;
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
@@ -494,7 +538,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=1, Y=2, Z=2 */
         {
             vector<uint8_t> childIndices = {9, 10, 13, 14, 25, 26, 29, 30};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Back, Top};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+            * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Front, Bottom};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -503,6 +551,8 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=0, Y=2, Z=2 */
         {
             vector<uint8_t> childIndices = {8, 9, 12, 13, 24, 25, 28, 29};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+             * faces */
             vector<Faces> childPossiblyApparentFaces = {Back, Left, Top};
             vector<Faces> childMandatoryFaces;
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
@@ -512,7 +562,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=0, Y=2, Z=1 */
         {
             vector<uint8_t> childIndices = {24, 25, 28, 29, 40, 41, 44, 45};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+             * faces */
             vector<Faces> childPossiblyApparentFaces = {Left, Top};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+            * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Bottom, Right};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -521,7 +575,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=2, Y=2, Z=1 */
         {
             vector<uint8_t> childIndices = {26, 27, 30, 31, 42, 43, 46, 47};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Right, Top};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+             * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Bottom, Left};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -530,6 +588,8 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=2, Y=2, Z=0 */
         {
             vector<uint8_t> childIndices = {42, 43, 46, 47, 58, 59, 62, 63};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+            * faces */
             vector<Faces> childPossiblyApparentFaces = {Right, Top, Front};
             vector<Faces> childMandatoryFaces;
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
@@ -539,7 +599,11 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=1, Y=2, Z=0 */
         {
             vector<uint8_t> childIndices = {41, 42, 45, 46, 57, 58, 61, 62};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+             * faces */
             vector<Faces> childPossiblyApparentFaces = {Front, Top};
+            /* Create the set of faces that will definitely be apparent from the exterior (those are made apparent
+            * through the hole of the sponge) */
             vector<Faces> childMandatoryFaces = {Bottom, Back};
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
                            childPossiblyApparentFaces, childMandatoryFaces);
@@ -548,6 +612,8 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         /* X=1, Y=2, Z=0 */
         {
             vector<uint8_t> childIndices = {40, 41, 44, 45, 56, 57, 60, 61};
+            /* Create the set of faces that could be apparent from the exterior, however neighbor cube might hide those
+             * faces */
             vector<Faces> childPossiblyApparentFaces = {Left, Top, Front};
             vector<Faces> childMandatoryFaces;
             subdivideChild(depth, vertices, indices, subdivisionResult, childIndices, parentApparentFaces,
@@ -555,7 +621,10 @@ void Sponge::recursiveSubdivide(uint8_t depth, const vector<float> &parallelepip
         }
 
     } else {
+        /* Max depth is achieved, the given parallelepiped is subdivided and the subdivision is added to the vertices
+         * list */
         subdivideParallelepiped(parallelepiped, vertices);
+        /* Indices are added in order to draw the faces described by the newly created vertices */
         addFaces((vertices.size() - 192) / 3, indices, parentApparentFaces);
     }
 }
