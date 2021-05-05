@@ -76,21 +76,21 @@ private:
     Cursor* selected = nullptr;
     uint16_t gaugeProperties[Gauges::GAUGE_NUMBER][6] {
             /* top left abscissa, top left ordinate, width, height, default cursor value in percents, bool must reload vertices */
-            { 10, 20,  120, 10, 70, 0},
-            { 10, 50,  120, 10, 70, 0 },
-            { 10, 80,  120, 10, 70, 0 },
-            { 10, 110, 120, 10, 70, 0 },
-            { 10, 140, 120, 10, 70, 0 },
-            { 10, 170, 120, 10, 70, 0 },
-            { 10, 200, 120, 10, 0, 0 },
-            { 10, 230, 120, 10, 100, 0 },
+            { 10, 20,  200, 10,  70, 0},
+            { 10, 50,  200, 10,  70, 0 },
+            { 10, 80,  200, 10,  70, 0 },
+            { 10, 110, 200, 10,  70, 0 },
+            { 10, 140, 200, 10,  70, 0 },
+            { 10, 170, 200, 10,  70, 0 },
+            { 10, 200, 200, 10,   0, 0 },
+            { 10, 230, 200, 10,  70, 0 },
 
-            { MenuProperties::width - 130, 20,  120, 10, 0, 1 },
-            { MenuProperties::width - 130, 50,  120, 10, 0, 1 },
-            { MenuProperties::width - 130, 80,  120, 10, 0, 1 },
-            { MenuProperties::width - 130, 110, 120, 10, 0, 1 },
-            { MenuProperties::width - 130, 140, 120, 10, 0, 1 },
-            { MenuProperties::width - 130, 170, 120, 10, 0, 1 },
+            { MenuProperties::width - 210, 20,  200, 10, 0, 1 },
+            { MenuProperties::width - 210, 50,  200, 10, 0, 1 },
+            { MenuProperties::width - 210, 80,  200, 10, 0, 1 },
+            { MenuProperties::width - 210, 110, 200, 10, 0, 1 },
+            { MenuProperties::width - 210, 140, 200, 10, 0, 1 },
+            { MenuProperties::width - 210, 170, 200, 10, 0, 1 },
     };
     uint16_t resetButtonProperties[4] {
         MenuProperties::width - 70, MenuProperties::height - 40, 50, 20,

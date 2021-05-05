@@ -109,7 +109,9 @@ void Menu::writeGaugeText() {
 
             default: break;
         }
-        writeLetters(appearance, text, gaugeProperties[i][0], gaugeProperties[i][1] - 10);
+        writeLetters(appearance, text,
+                     gaugeProperties[i][0] + (gaugeProperties[i][2] - text.length() * 8) / 2,
+                     gaugeProperties[i][1] - 10);
     }
 }
 

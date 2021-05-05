@@ -32,8 +32,9 @@ enum VAO_ID {
     NZ = 5,
     PW = 6,
     NW = 7,
-    OVERLAY = 8,
-    NUMBER = 9,
+    WIRE_MESH = 8,
+    OVERLAY = 9,
+    NUMBER = 10,
 };
 
 enum TEXTURE_ID {
@@ -56,11 +57,11 @@ private:
     static float minCameraDistance;
     static double scroll_speed;
     static bool leftButtonPressed;
-    static bool wireframe;
+    static bool wire_mesh;
 
     glm::vec3 cameraPosition{};
 
-    double mouse_speed = 0.15;
+    double mouse_speed = 0.005;
     static double xpos, ypos;
     double mouse_pos_x = 0.0;
     double mouse_pos_y = 0.0;
@@ -165,6 +166,8 @@ private:
     */
     void fillSpongeVertexArray(VAO_ID ID);
 
+    void fillWireMeshVertexArray();
+
     /**
      * Initialize overlay texture buffer and position vertices
      */
@@ -204,6 +207,8 @@ private:
      * Then draw in order
      */
     void drawCubes();
+
+    void drawWireMesh();
 
     /**
      * Draw the overlay texture to the viewport

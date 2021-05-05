@@ -7,8 +7,8 @@ public:
     static float gaugeColors[4];
     static float cursorColors[4];
     static float buttonColors[4];
-    const static uint16_t width = 960;
-    const static uint16_t height = 540;
+    const static uint16_t width = 1280;
+    const static uint16_t height = 720;
 
     static bool isConstrained(uint16_t abscissa, uint16_t ordinate) {
         return abscissa >= 0 && abscissa < width && ordinate >= 0 && ordinate < height;

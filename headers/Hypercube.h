@@ -22,7 +22,6 @@ protected:
             glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
     };
     vector<glm::vec4> hypercubePoints = baseHypercubePoints;
-    vector<glm::vec3> projectedHypercubePoints;
 
     /**
      * Resets the hypercube point buffer

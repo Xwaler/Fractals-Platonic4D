@@ -9,7 +9,7 @@ float Window::cameraOffset4D = 3.0f;
 float Window::minCameraDistance = 0.1f;
 double Window::scroll_speed = 0.2f;
 bool Window::leftButtonPressed = false;
-bool Window::wireframe = false;
+bool Window::wire_mesh = false;
 double Window::xpos = 0.0;
 double Window::ypos = 0.0;
 Menu Window::menu; //TODO: éviter cette chose, on doit pouvoir acceder à menu depuis des méthodes statiques (event handlers)
@@ -26,9 +26,12 @@ Window::Window() : sponge() {
  * Project the 4D hypercube coordinates to 3D space
  */
 void Window::projectHypercubeTo3D() {
-    projectedHypercubePoints.clear();
+    points[VAO_ID::WIRE_MESH].clear();
     for (glm::vec4 &V: hypercubePoints) {
-        projectedHypercubePoints.push_back(glm::vec3(V) / (cameraOffset4D - V.w));
+        glm::vec3 Vp = glm::vec3(V) / (cameraOffset4D - V.w);
+        points[VAO_ID::WIRE_MESH].push_back(Vp.x);
+        points[VAO_ID::WIRE_MESH].push_back(Vp.y);
+        points[VAO_ID::WIRE_MESH].push_back(Vp.z);
     }
 }
 
@@ -39,10 +42,10 @@ void Window::projectHypercubeTo3D() {
 void Window::create3DCube(VAO_ID ID) {
     points[ID].clear();
     for (uint8_t index: cubesIndices[ID]) {
-        glm::vec3 p = projectedHypercubePoints[index];
-        points[ID].push_back(p.x);
-        points[ID].push_back(p.y);
-        points[ID].push_back(p.z);
+        float *p = &points[VAO_ID::WIRE_MESH][index * 3];
+        points[ID].push_back(*(p + 0));
+        points[ID].push_back(*(p + 1));
+        points[ID].push_back(*(p + 2));
     }
 }
 
@@ -68,6 +71,19 @@ void Window::createMengerSpongeLikeHypercube() {
     cubesColors[VAO_ID::NZ] = glm::vec3(254, 165, 57) / 255.0f;
     cubesColors[VAO_ID::PW] = glm::vec3(204, 101, 42) / 255.0f;
     cubesColors[VAO_ID::NW] = glm::vec3(106, 255, 188) / 255.0f;
+    indices[VAO_ID::WIRE_MESH] = {
+            0, 1, 1, 3, 3, 2, 2, 0,         // NX
+            4, 5, 5, 7, 7, 6, 6, 4,         // PX
+
+            8, 9, 9, 11, 11, 10, 10, 8,     // NW
+            12, 13, 13, 15, 15, 14, 14, 12, // PW
+
+            0, 8, 1, 9, 2, 10, 3, 11,       // links NW
+            4, 12, 5, 13, 6, 14, 7, 15,     // links PW
+
+            0, 4, 1, 5, 2, 6, 3, 7,         // links NY
+            8, 12, 9, 13, 10, 14, 11, 15,   // links PY
+    };
 
     /* Project from 4D to 3D */
     projectHypercubeTo3D();
@@ -105,8 +121,13 @@ void Window::renderMengerSpongeLikeHypercube() {
         /* Update hypercube rotations if the user changed them */
         updateRotations();
 
-        /* Draw the cubes in back to front order */
-        drawCubes();
+        if (wire_mesh) {
+            /* Draw projected hypercube wire mesh */
+            drawWireMesh();
+        } else {
+            /* Draw the cubes in back to front order */
+            drawCubes();
+        }
 
         /* Draw overlay over the viewport */
         drawOverlay();
@@ -125,46 +146,6 @@ void Window::renderMengerSpongeLikeHypercube() {
  */
 void Window::setOverlayArray(vector<float> &array) {
     textureArrays[TEXTURE_ID::OVERLAY_TEXTURE] = array;
-}
-
-/**
- * Initialize overlay texture buffer and position vertices
- */
-void Window::createOverlayTexture() {
-    glBindVertexArray(VAO[VAO_ID::OVERLAY]);
-    vertices[VAO_ID::OVERLAY] = {
-            0.0f, 0.0f,
-            1.0f, 0.0f,
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-    };
-    indices[VAO_ID::OVERLAY] = {
-            0, 2, 1,
-            1, 2, 3,
-    };
-    /* Bind vertex buffer to vertex array */
-    glBindBuffer(GL_ARRAY_BUFFER, VBO[VAO_ID::OVERLAY]);
-    /* Buffer vertices to vertex buffer */
-    glBufferData(GL_ARRAY_BUFFER, (long) (vertices[VAO_ID::OVERLAY].size() * sizeof(float)), vertices[VAO_ID::OVERLAY].data(), GL_STATIC_DRAW);
-    /* Assign the buffer content to vertex array pointer 0 */
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
-    glEnableVertexAttribArray(0);
-    /* Bind vertex buffer to vertex array */
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[VAO_ID::OVERLAY]);
-    /* Buffer vertices to vertex buffer */
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long) (indices[VAO_ID::OVERLAY].size() * sizeof(float)), indices[VAO_ID::OVERLAY].data(), GL_STATIC_DRAW);
-
-    /* Select shader texture ID */
-    glActiveTexture(GL_TEXTURE0 + TEXTURE_ID::OVERLAY_TEXTURE);
-    /* Binds our texture for parametrisation */
-    glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_ID::OVERLAY_TEXTURE]);
-    /* Set texture base parameters */
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    /* Initialize texture image to empty (black) and transparent */
-    textureArrays[TEXTURE_ID::OVERLAY_TEXTURE] = vector<float>(MenuProperties::width * MenuProperties::height * 4, 0.0f);
-    /* Fill the texture with image to preallocate space */
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, MenuProperties::width, MenuProperties::height, 0, GL_RGBA, GL_FLOAT, textureArrays[TEXTURE_ID::OVERLAY_TEXTURE].data());
 }
 
 /**
@@ -278,8 +259,12 @@ void Window::updateRotations() {
     }
 
     if (spongeWorker == nullptr && vertexComputationUpdated) {
-        for (uint8_t ID = 0; ID < 8; ++ID) {
-            fillSpongeVertexArray((VAO_ID) ID);
+        if (wire_mesh) {
+            fillWireMeshVertexArray();
+        } else {
+            for (uint8_t ID = 0; ID < 8; ++ID) {
+                fillSpongeVertexArray((VAO_ID) ID);
+            }
         }
         vertexComputationUpdated = false;
     }
@@ -325,7 +310,7 @@ void Window::updateRotations() {
         spongeWorker = new thread(&Window::computeVertexArray, this);
     }
 
-    if (spongeWorker == nullptr && spongeDepth != maxSpongeDepth && !wireframe) {
+    if (spongeWorker == nullptr && spongeDepth != maxSpongeDepth && !wire_mesh) {
         spongeDepth = min((uint8_t) (spongeDepth + 1), maxSpongeDepth);
         Sponge::killComputation = false;
         spongeWorkerHasFinished = false;
@@ -359,6 +344,63 @@ void Window::fillSpongeVertexArray(VAO_ID ID) {
     /* Buffer indices to vertex buffer */
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long) (indices[ID].size() * sizeof(uint32_t)), indices[ID].data(), GL_STATIC_DRAW);
     currentIndicesCount[ID] = indices[ID].size();
+}
+
+void Window::fillWireMeshVertexArray() {
+    /* Bind wanted vertex array */
+    glBindVertexArray(VAO[VAO_ID::WIRE_MESH]);
+    /* Bind vertex buffer to vertex array */
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[VAO_ID::WIRE_MESH]);
+    /* Buffer vertices to vertex buffer */
+    glBufferData(GL_ARRAY_BUFFER, (long) (points[VAO_ID::WIRE_MESH].size() * sizeof(float)), points[VAO_ID::WIRE_MESH].data(), GL_STATIC_DRAW);
+    /* Assign the buffer content to vertex array pointer 0 */
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
+    glEnableVertexAttribArray(0);
+    /* Bind indices buffer to vertex array */
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[VAO_ID::WIRE_MESH]);
+    /* Buffer indices to vertex buffer */
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long) (indices[VAO_ID::WIRE_MESH].size() * sizeof(uint32_t)), indices[VAO_ID::WIRE_MESH].data(), GL_STATIC_DRAW);
+    currentIndicesCount[VAO_ID::WIRE_MESH] = indices[VAO_ID::WIRE_MESH].size();
+}
+
+
+/**
+ * Initialize overlay texture buffer and position vertices
+ */
+void Window::createOverlayTexture() {
+    glBindVertexArray(VAO[VAO_ID::OVERLAY]);
+    vertices[VAO_ID::OVERLAY] = {
+            0.0f, 0.0f,
+            1.0f, 0.0f,
+            0.0f, 1.0f,
+            1.0f, 1.0f,
+    };
+    indices[VAO_ID::OVERLAY] = {
+            0, 2, 1,
+            1, 2, 3,
+    };
+    /* Bind vertex buffer to vertex array */
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[VAO_ID::OVERLAY]);
+    /* Buffer vertices to vertex buffer */
+    glBufferData(GL_ARRAY_BUFFER, (long) (vertices[VAO_ID::OVERLAY].size() * sizeof(float)), vertices[VAO_ID::OVERLAY].data(), GL_STATIC_DRAW);
+    /* Assign the buffer content to vertex array pointer 0 */
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*) nullptr);
+    glEnableVertexAttribArray(0);
+    /* Bind vertex buffer to vertex array */
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO[VAO_ID::OVERLAY]);
+    /* Buffer vertices to vertex buffer */
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (long) (indices[VAO_ID::OVERLAY].size() * sizeof(float)), indices[VAO_ID::OVERLAY].data(), GL_STATIC_DRAW);
+    currentIndicesCount[VAO_ID::OVERLAY] = indices[VAO_ID::OVERLAY].size();
+
+    /* Select shader texture ID */
+    glActiveTexture(GL_TEXTURE0 + TEXTURE_ID::OVERLAY_TEXTURE);
+    /* Binds our texture for parametrisation */
+    glBindTexture(GL_TEXTURE_2D, textures[TEXTURE_ID::OVERLAY_TEXTURE]);
+    /* Set texture base parameters */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    /* Preallocate texture space */
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, MenuProperties::width, MenuProperties::height, 0, GL_RGBA, GL_FLOAT, nullptr);
 }
 
 /**
@@ -501,6 +543,21 @@ void Window::drawCubes() {
     drawVAOContents((VAO_ID) outer);
 }
 
+void Window::drawWireMesh() {
+    glBindVertexArray(VAO[VAO_ID::WIRE_MESH]);
+    glUseProgram(programMain);
+
+    /* Matte black color */
+    glm::vec4 color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    loadUniformVec4f(programMain, "color", color);
+    /* Model matrix */
+    glm::mat4 model = glm::mat4(1.0f);
+    /* Push model matrix to gpu through uniform */
+    loadUniformMat4f(programMain, "model", model);
+    /* Draw vertices and create fragments with triangles */
+    glDrawElements(GL_LINES, (int32_t) currentIndicesCount[VAO_ID::WIRE_MESH], GL_UNSIGNED_INT, nullptr);
+}
+
 /**
  * Draw the overlay texture to the viewport
  */
@@ -510,8 +567,6 @@ void Window::drawOverlay() {
     glUseProgram(programTexture);
     /* Disable depth test to ensure the overlay to be on top of everything */
     disableDepthTest();
-    /* Temporarily disable wireframe mode */
-    if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     /* Activate our texture ID and fill it with the image data */
     glActiveTexture(GL_TEXTURE0 + TEXTURE_ID::OVERLAY_TEXTURE);
@@ -523,9 +578,8 @@ void Window::drawOverlay() {
     loadUniformMat4f(programTexture, "projection", projection);
     /* Bind our texture ID to the shader */
     loadUniform1f(programTexture, "overlayTexture", TEXTURE_ID::OVERLAY_TEXTURE);
-    glDrawElements(GL_TRIANGLES, (int32_t) indices[VAO_ID::OVERLAY].size(), GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_TRIANGLES, (int32_t) currentIndicesCount[VAO_ID::OVERLAY], GL_UNSIGNED_INT, nullptr);
 
-    if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     /* Re-enable for following draws */
     enableDepthTest();
     glUseProgram(programMain);
@@ -583,8 +637,8 @@ void Window::updateCamera() {
     // get new cursor position
     glfwGetCursorPos(window, &xpos, &ypos);
     if (leftButtonPressed && !menu.isInputCaptured()) { // if the user is pressing the mouse left button, update the camera angle
-        horizontal_angle += (float) (deltaTime * mouse_speed * (mouse_pos_x - xpos));
-        vertical_angle += (float) (deltaTime * mouse_speed * (ypos - mouse_pos_y));
+        horizontal_angle += (float) (mouse_speed * (mouse_pos_x - xpos));
+        vertical_angle += (float) (mouse_speed * (ypos - mouse_pos_y));
     }
     mouse_pos_x = xpos;
     mouse_pos_y = ypos;
@@ -696,9 +750,8 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) { // close the window
         glfwSetWindowShouldClose(window, true);
     }
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) { // toggle wireframe display mode
-        wireframe = !wireframe;
-        wireframe ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE): glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) { // toggle wire_mesh display mode
+        wire_mesh = !wire_mesh;
         menu.rotationWasModified = true;
     }
 }
