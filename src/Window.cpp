@@ -7,6 +7,7 @@ uint16_t Window::HEIGHT = 720;
 float Window::cameraDistance = 3.0f;
 float Window::cameraOffset4D = 3.0f;
 float Window::minCameraDistance = 0.1f;
+float Window::poleRadius = 0.01f;
 double Window::scroll_speed = 0.2f;
 bool Window::leftButtonPressed = false;
 bool Window::wire_mesh = false;
@@ -109,7 +110,7 @@ void Window::renderMengerSpongeLikeHypercube() {
         menu.handleMouseMovement((uint16_t) (xpos / WIDTH * MenuProperties::width),
                                  (uint16_t) (ypos / HEIGHT * MenuProperties::height));
 
-        setOverlayArray(menu.getAppearance());
+        setOverlayArray(menu.getTexture());
 
         /* Initialize view matrix from camera and perspective projection matrix */
         glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0, 1.0f, 0.0f));
@@ -119,7 +120,7 @@ void Window::renderMengerSpongeLikeHypercube() {
         loadUniformMat4f(programMain, "projection", projection);
 
         /* Update hypercube rotations if the user changed them */
-        updateRotations();
+        update();
 
         if (wire_mesh) {
             /* Draw projected hypercube wire mesh */
@@ -252,12 +253,19 @@ void Window::computeVertexArray() {
     }
 }
 
-void Window::updateRotations() {
+/**
+ * Update the hypercube representation, updating the rotations if needed
+ * Incrementally increase the sponge depth
+ * Manage existing sponge computing thread
+ */
+void Window::update() {
+    /* Ensures that current thread is either working or completely dead */
     if (spongeWorker != nullptr && spongeWorkerHasFinished) {
         spongeWorker->join();
         spongeWorker = nullptr;
     }
 
+    /* If a new computation has finished, send all the data to the GPU */
     if (spongeWorker == nullptr && vertexComputationUpdated) {
         if (wire_mesh) {
             fillWireMeshVertexArray();
@@ -271,51 +279,63 @@ void Window::updateRotations() {
 
     /* If the user changed the rotation parameters, re-compute hypercube and sponge vertices */
     if (menu.rotationWasModified) {
-        menu.rotationWasModified = false;
-        /* Reset transformations */
-        init4DRotations();
-        /* Apply all 4D rotations */
-        if (menu.getGaugeValue(Gauges::ROTATION_XY) != 0) {
-            rotateXY(menu.getGaugeValue(Gauges::ROTATION_XY) * PI2);
-        }
-        if (menu.getGaugeValue(Gauges::ROTATION_YZ) != 0) {
-            rotateYZ(menu.getGaugeValue(Gauges::ROTATION_YZ) * PI2);
-        }
-        if (menu.getGaugeValue(Gauges::ROTATION_ZX) != 0) {
-            rotateZX(menu.getGaugeValue(Gauges::ROTATION_ZX) * PI2);
-        }
-        if (menu.getGaugeValue(Gauges::ROTATION_XW) != 0) {
-            rotateXW(menu.getGaugeValue(Gauges::ROTATION_XW) * PI2);
-        }
-        if (menu.getGaugeValue(Gauges::ROTATION_YW) != 0) {
-            rotateYW(menu.getGaugeValue(Gauges::ROTATION_YW) * PI2);
-        }
-        if (menu.getGaugeValue(Gauges::ROTATION_ZW) != 0) {
-            rotateZW(menu.getGaugeValue(Gauges::ROTATION_ZW) * PI2);
-        }
-        /* Project from 4D to 3D */
-        projectHypercubeTo3D();
-        /* Re-create cubes */
-        for (uint8_t i = 0; i < 8; ++i) {
-            create3DCube((VAO_ID) i);
-        }
-
-        spongeDepth = 1;
-        if (spongeWorker != nullptr) {
-            Sponge::killComputation = true;
-            spongeWorker->join();
-        }
-        Sponge::killComputation = false;
-        spongeWorkerHasFinished = false;
-        spongeWorker = new thread(&Window::computeVertexArray, this);
+        updateRotations();
     }
 
+    /* If we aren't at maximum depth, launch a new sponge computing thread with a bigger depth */
     if (spongeWorker == nullptr && spongeDepth != maxSpongeDepth && !wire_mesh) {
         spongeDepth = min((uint8_t) (spongeDepth + 1), maxSpongeDepth);
         Sponge::killComputation = false;
         spongeWorkerHasFinished = false;
         spongeWorker = new thread(&Window::computeVertexArray, this);
     }
+}
+
+/**
+ * Transform the hypercube by the new rotations parameters and re-compute the individual cubes
+ * Then resets depth to 1 and launch a sponge computing thread
+ */
+void Window::updateRotations() {
+    menu.rotationWasModified = false;
+    /* Reset transformations */
+    init4DRotations();
+    /* Apply all 4D rotations */
+    if (menu.getGaugeValue(Gauges::ROTATION_XY) != 0) {
+        rotateXY(menu.getGaugeValue(Gauges::ROTATION_XY) * PI2);
+    }
+    if (menu.getGaugeValue(Gauges::ROTATION_YZ) != 0) {
+        rotateYZ(menu.getGaugeValue(Gauges::ROTATION_YZ) * PI2);
+    }
+    if (menu.getGaugeValue(Gauges::ROTATION_ZX) != 0) {
+        rotateZX(menu.getGaugeValue(Gauges::ROTATION_ZX) * PI2);
+    }
+    if (menu.getGaugeValue(Gauges::ROTATION_XW) != 0) {
+        rotateXW(menu.getGaugeValue(Gauges::ROTATION_XW) * PI2);
+    }
+    if (menu.getGaugeValue(Gauges::ROTATION_YW) != 0) {
+        rotateYW(menu.getGaugeValue(Gauges::ROTATION_YW) * PI2);
+    }
+    if (menu.getGaugeValue(Gauges::ROTATION_ZW) != 0) {
+        rotateZW(menu.getGaugeValue(Gauges::ROTATION_ZW) * PI2);
+    }
+    /* Project from 4D to 3D */
+    projectHypercubeTo3D();
+    /* Re-create cubes */
+    for (uint8_t i = 0; i < 8; ++i) {
+        create3DCube((VAO_ID) i);
+    }
+
+    /* Resets depth to 1 */
+    spongeDepth = 1;
+    /* Kill the actual sponge computing thread if alive */
+    if (spongeWorker != nullptr) {
+        Sponge::killComputation = true;
+        spongeWorker->join();
+    }
+    /* Launch a new sponge computing thread with updated depth */
+    Sponge::killComputation = false;
+    spongeWorkerHasFinished = false;
+    spongeWorker = new thread(&Window::computeVertexArray, this);
 }
 
 /**
@@ -346,6 +366,10 @@ void Window::fillSpongeVertexArray(VAO_ID ID) {
     currentIndicesCount[ID] = indices[ID].size();
 }
 
+/**
+ * Load vertices, normals and indices to buffers
+ * @param ID of the VAO used to store the data
+*/
 void Window::fillWireMeshVertexArray() {
     /* Bind wanted vertex array */
     glBindVertexArray(VAO[VAO_ID::WIRE_MESH]);
@@ -460,6 +484,7 @@ void Window::drawCubes() {
     uint32_t inner; uint32_t outer;
     float innerNorm = 1e9f; float outerNorm = 0.0f;
 
+    /* Compute distances to origin and to camera */
     for (uint8_t i = 0; i < 8; ++i) {
         glm::vec3 centerOfMass(0.0f); glm::vec3 summedCoords(0.0f);
         glm::vec3 pos;
@@ -471,6 +496,7 @@ void Window::drawCubes() {
         }
         distances.push_back(glm::length(cameraPosition - centerOfMass / (float) points[(VAO_ID) i].size()));
 
+        /* Keep only the closest and furthest cube to origin */
         float norm = glm::length(summedCoords);
         if (norm < innerNorm) {
             innerNorm = norm;
@@ -543,6 +569,9 @@ void Window::drawCubes() {
     drawVAOContents((VAO_ID) outer);
 }
 
+/**
+ * Draw the hypercube wire mesh to the viewport
+ */
 void Window::drawWireMesh() {
     glBindVertexArray(VAO[VAO_ID::WIRE_MESH]);
     glUseProgram(programMain);
@@ -638,7 +667,11 @@ void Window::updateCamera() {
     glfwGetCursorPos(window, &xpos, &ypos);
     if (leftButtonPressed && !menu.isInputCaptured()) { // if the user is pressing the mouse left button, update the camera angle
         horizontal_angle += (float) (mouse_speed * (mouse_pos_x - xpos));
-        vertical_angle += (float) (mouse_speed * (ypos - mouse_pos_y));
+        /* Clip the vertical angle around the poles (~[-PI/2, PI/2]) to avoid camera inversion */
+        vertical_angle = glm::max(
+            glm::min(vertical_angle + (float) (mouse_speed * (ypos - mouse_pos_y)), PI / 2.0f - poleRadius),
+            -PI / 2.0f + poleRadius
+        );
     }
     mouse_pos_x = xpos;
     mouse_pos_y = ypos;
@@ -797,7 +830,7 @@ void Window::scroll_callback(GLFWwindow* w, double xoffset, double yoffset) {
  */
 void Window::clear() {
     glClearColor(0.8f, 0.8f, 0.8f, 1.0f); // reset background color
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear opengl buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear opengl buffers
 }
 
 /**

@@ -20,7 +20,7 @@ light lights[2] = {
 
 void main() {
     if (vColor.a == 0.0f) {
-        discard;
+        discard; // don't try to draw faces that are completly transparent
     }
 
     vec3 result = 0.2f * vec3(1.0f, 1.0f, 1.0f); // ambiant light

@@ -37,6 +37,10 @@ enum VAO_ID {
     NUMBER = 10,
 };
 
+/**
+ * ID of texture objects
+ * NUMBER is the count of useful members in this enum
+ */
 enum TEXTURE_ID {
     OVERLAY_TEXTURE = 0,
     NUMBER_TEXTURE = 1,
@@ -55,6 +59,7 @@ private:
     static float cameraDistance;
     static float cameraOffset4D;
     static float minCameraDistance;
+    static float poleRadius;
     static double scroll_speed;
     static bool leftButtonPressed;
     static bool wire_mesh;
@@ -158,6 +163,17 @@ private:
      */
     void computeVertexArray();
 
+    /**
+     * Update the hypercube representation, updating the rotations if needed
+     * Incrementally increase the sponge depth
+     * Manage existing sponge computing thread
+     */
+    void update();
+
+    /**
+     * Transform the hypercube by the new rotations parameters and re-compute the individual cubes
+     * Then resets depth to 1 and launch a sponge computing thread
+     */
     void updateRotations();
 
     /**
@@ -166,6 +182,10 @@ private:
     */
     void fillSpongeVertexArray(VAO_ID ID);
 
+    /**
+     * Load vertices, normals and indices to buffers
+     * @param ID of the VAO used to store the data
+    */
     void fillWireMeshVertexArray();
 
     /**
@@ -208,6 +228,9 @@ private:
      */
     void drawCubes();
 
+    /**
+     * Draw the hypercube wire mesh to the viewport
+     */
     void drawWireMesh();
 
     /**

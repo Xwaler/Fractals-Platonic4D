@@ -7,7 +7,8 @@
 
 static float fontColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
-/* Credits to https://github.com/dhepper/font8x8 */
+/* Credits to https://github.com/dhepper/font8x8
+ * One row per letter, composed of 8 bytes, each byte corresponding to the 8 pixels of a letter image column */
 static uint8_t font[128][8] = {
         {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // U+0000 (nul)
         {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // U+0001

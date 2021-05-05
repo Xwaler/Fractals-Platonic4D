@@ -12,6 +12,9 @@
 #include "MenuProperties.h"
 #include "font.h"
 
+/**
+ * ID of the gauges
+ */
 enum Gauges {
     TRANSPARENCY_PX = 0,
     TRANSPARENCY_NX = 1,
@@ -30,48 +33,95 @@ enum Gauges {
     GAUGE_NUMBER = 14,
 };
 
+/**
+ * Draw shapes to a texture
+ */
 class ShapesDrawer {
 public:
-    static void drawDiamond(std::vector<float> &appearance, uint16_t abscissa, uint16_t ordinate,
-                     uint16_t semiDiagonalLength, const float colors[4]);
+    /**
+     * Draw an equilateral triangle
+     * @param texture
+     * @param abscissa
+     * @param ordinate
+     * @param semiDiagonalLength
+     * @param colors
+     */
+    static void drawEquilateralTriangle(std::vector<float> &texture, uint16_t abscissa, uint16_t ordinate,
+                                        uint16_t semiDiagonalLength, const float *colors);
 
-    static void drawRectangle(std::vector<float> &appearance, uint16_t topLeftAbscissa, uint16_t topLeftOrdinate,
+    /**
+     * Draw a rectangle
+     * @param texture
+     * @param topLeftAbscissa
+     * @param topLeftOrdinate
+     * @param bottomRightAbscissa
+     * @param bottomRightOrdinate
+     * @param colors
+     */
+    static void drawRectangle(std::vector<float> &texture, uint16_t topLeftAbscissa, uint16_t topLeftOrdinate,
                               uint16_t bottomRightAbscissa, uint16_t bottomRightOrdinate, const float colors[4]);
 };
 
+/**
+ * Moving cursor
+ */
 class Cursor {
 public:
     bool triggerVerticesReload;
 private:
-    std::vector<float> &appearance;
+    std::vector<float> &texture;
     uint16_t abscissa;
     uint16_t ordinate;
     uint16_t semiDiagonalLength;
     uint16_t startAbscissaTrack;
     uint16_t endAbscissaTrack;
 
+    /**
+     * Draw to the texture
+     */
     void draw();
 
+    /**
+     * Restore the original colors behind the cursor
+     */
     void restoreBackground();
 
 public:
-    Cursor(std::vector<float> &appearance, uint16_t abscissa, uint16_t ordinate, uint16_t trackLength, uint16_t semiDiagonalLength, float defaultValue, bool triggerVerticesReload);
+    Cursor(std::vector<float> &texture, uint16_t abscissa, uint16_t ordinate, uint16_t trackLength, uint16_t semiDiagonalLength, float defaultValue, bool triggerVerticesReload);
 
+    /**
+     * Checks if a new position will trigger a movement
+     * @param newAbscissa
+     * @return
+     */
     bool willMove(uint16_t newAbscissa) const;
 
+    /**
+     * Move the cursor to a new abscissa
+     * @param newAbscissa
+     */
     void move(uint16_t newAbscissa);
 
+    /**
+     * Compute the ratio between the current position and it's extrema
+     * @return
+     */
     float getValue() const;
 
+    /**
+     * A position is inside the cursor's hit-box
+     * @param x
+     * @param y
+     * @return
+     */
     bool contains(uint16_t x, uint16_t y) const;
 };
 
 class Menu {
 public:
-    bool isLeftTabUp;
     bool rotationWasModified = false;
 private:
-    std::vector<float> appearance;
+    std::vector<float> texture;
     std::vector<Cursor> cursors;
     Cursor* selected = nullptr;
     uint16_t gaugeProperties[Gauges::GAUGE_NUMBER][6] {
@@ -99,22 +149,57 @@ private:
 public:
     Menu();
 
-    std::vector<float>& getAppearance();
+    /**
+     * @return texture
+     */
+    std::vector<float>& getTexture();
 
+    /**
+     * Get a gauge's normalized value
+     * @param ID
+     * @return
+     */
     float getGaugeValue(Gauges ID);
 
+    /**
+     * Return true if a cursor is currently selected
+     * @return
+     */
     bool isInputCaptured();
 
+    /**
+     * Handler for key presses
+     * @param action
+     * @param abscissa
+     * @param ordinate
+     */
     void handleKeyPress(uint32_t action, uint16_t abscissa, uint16_t ordinate);
 
+    /**
+     * Handler for mouse movements
+     * @param abscissa
+     * @param ordinate
+     */
     void handleMouseMovement(uint16_t abscissa, uint16_t ordinate);
 private:
+    /**
+     * Draw all the gauges
+     */
     void drawGauges();
 
+    /**
+     * Write each gauges text above it
+     */
     void writeGaugeText();
 
+    /**
+     * Initialize cursors objects
+     */
     void createCursors();
 
+    /**
+     * Draw the reset button
+     */
     void drawResetButton();
 };
 

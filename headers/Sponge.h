@@ -14,8 +14,11 @@
 
 using namespace std;
 
-struct WorkerKilled : public exception {
-    const char * what () const throw () {
+/**
+ * Custom exception class used to kill the sponge computing thread
+ */
+class WorkerKilled : public exception {
+    const char* what() const throw () {
         return "SpongeWorker was purposely killed";
     }
 };
