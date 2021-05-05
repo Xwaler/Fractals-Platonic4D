@@ -142,8 +142,31 @@ private:
             { MenuProperties::width - 210, 140, 200, 10, 0, 1 },
             { MenuProperties::width - 210, 170, 200, 10, 0, 1 },
     };
-    uint16_t resetButtonProperties[4] {
-        MenuProperties::width - 70, MenuProperties::height - 40, 50, 20,
+    std::string gaugeTexts[Gauges::GAUGE_NUMBER] {
+            "PX transparency",
+            "NX transparency",
+            "PY transparency",
+            "NY transparency",
+            "PZ transparency",
+            "NZ transparency",
+            "PW transparency",
+            "NW transparency",
+
+            "XY rotation",
+            "YZ rotation",
+            "ZX rotation",
+            "XW rotation",
+            "YW rotation",
+            "ZW rotation",
+    };
+    std::vector<uint16_t> resetButtonProperties {
+            MenuProperties::width - 60, MenuProperties::height - 30, 50, 20,
+    };
+    std::vector<std::vector<uint16_t>> keysTooltipPositions {
+            {10, MenuProperties::height - 18},
+    };
+    std::vector<std::string> keysTooltipTexts {
+            "Press Space to toggle wire mesh mode",
     };
 
 public:
@@ -201,6 +224,11 @@ private:
      * Draw the reset button
      */
     void drawResetButton();
+
+    /**
+     * Draw the key helper
+     */
+    void drawKeysTooltip();
 };
 
 #endif //FRACTALS_PLATONIC4D_MENU_H

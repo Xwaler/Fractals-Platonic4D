@@ -146,28 +146,8 @@ void Menu::drawGauges() {
  */
 void Menu::writeGaugeText() {
     for (uint16_t i = 0; i < Gauges::GAUGE_NUMBER; ++i) {
-        std::string text;
-        switch (i) {
-            case Gauges::TRANSPARENCY_PX: text = "PX transparency"; break;
-            case Gauges::TRANSPARENCY_NX: text = "NX transparency"; break;
-            case Gauges::TRANSPARENCY_PY: text = "PY transparency"; break;
-            case Gauges::TRANSPARENCY_NY: text = "NY transparency"; break;
-            case Gauges::TRANSPARENCY_PZ: text = "PZ transparency"; break;
-            case Gauges::TRANSPARENCY_NZ: text = "NZ transparency"; break;
-            case Gauges::TRANSPARENCY_PW: text = "PW transparency"; break;
-            case Gauges::TRANSPARENCY_NW: text = "NW transparency"; break;
-
-            case Gauges::ROTATION_XY: text = "XY rotation"; break;
-            case Gauges::ROTATION_YZ: text = "YZ rotation"; break;
-            case Gauges::ROTATION_ZX: text = "ZX rotation"; break;
-            case Gauges::ROTATION_XW: text = "XW rotation"; break;
-            case Gauges::ROTATION_YW: text = "YW rotation"; break;
-            case Gauges::ROTATION_ZW: text = "ZW rotation"; break;
-
-            default: break;
-        }
-        writeLetters(texture, text,
-                     gaugeProperties[i][0] + (gaugeProperties[i][2] - text.length() * 8) / 2,
+        writeLetters(texture, gaugeTexts[i],
+                     gaugeProperties[i][0] + (gaugeProperties[i][2] - gaugeTexts[i].length() * 8) / 2,
                      gaugeProperties[i][1] - 10);
     }
 }
@@ -197,11 +177,18 @@ void Menu::drawResetButton() {
     writeLetters(texture, "Reset", resetButtonProperties[0] + 6, resetButtonProperties[1] + 7);
 }
 
+void Menu::drawKeysTooltip() {
+    for (uint16_t i = 0; i < (uint16_t) keysTooltipPositions.size(); ++i) {
+        writeLetters(texture, keysTooltipTexts[i], keysTooltipPositions[i][0], keysTooltipPositions[i][1]);
+    }
+}
+
 Menu::Menu() : texture(MenuProperties::width * MenuProperties::height * 4, 0.0f), cursors() {
     drawGauges();
     writeGaugeText();
     createCursors();
     drawResetButton();
+    drawKeysTooltip();
 }
 
 /**
