@@ -25,7 +25,7 @@ void main() {
 
     vec3 result = 0.2f * vec3(1.0f, 1.0f, 1.0f); // ambiant light
 
-    vec3 norm = normalize(transpose(inverse(mat3(model))) * vNormal);
+    vec3 norm = normalize(transpose(inverse(mat3(model))) * (gl_FrontFacing ? 1 : -1) * vNormal);
     for (uint i = 0; i < 2; ++i) {
         vec3 lightDir = normalize(lights[i].pos - fragPos); // vector between source and fragment position
         float diff = max(dot(norm, lightDir), 0.0f); // diffusion component

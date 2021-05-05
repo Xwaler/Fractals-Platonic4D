@@ -11,10 +11,10 @@ using namespace std;
 class Hypercube {
 protected:
     const vector<glm::vec4> baseHypercubePoints = {
-            glm::vec4(-1.0f, -1.0f, -1.0f, 0.5f), glm::vec4(1.0f, -1.0f, -1.0f, 0.5f),
-            glm::vec4(-1.0f, 1.0f, -1.0f, 0.5f), glm::vec4(1.0f, 1.0f, -1.0f, 0.5f),
-            glm::vec4(-1.0f, -1.0f, 1.0f, 0.5f), glm::vec4(1.0f, -1.0f, 1.0f, 0.5f),
-            glm::vec4(-1.0f, 1.0f, 1.0f, 0.5f), glm::vec4(1.0f, 1.0f, 1.0f, 0.5f),
+            glm::vec4(-1.0f, -1.0f, -1.0f, -1.0f), glm::vec4(1.0f, -1.0f, -1.0f, -1.0f),
+            glm::vec4(-1.0f, 1.0f, -1.0f, -1.0f), glm::vec4(1.0f, 1.0f, -1.0f, -1.0f),
+            glm::vec4(-1.0f, -1.0f, 1.0f, -1.0f), glm::vec4(1.0f, -1.0f, 1.0f, -1.0f),
+            glm::vec4(-1.0f, 1.0f, 1.0f, -1.0f), glm::vec4(1.0f, 1.0f, 1.0f, -1.0f),
 
             glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),
             glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, -1.0f, 1.0f),

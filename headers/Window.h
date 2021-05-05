@@ -52,6 +52,7 @@ private:
     static uint16_t WIDTH;
     static uint16_t HEIGHT;
     static float cameraDistance;
+    static float cameraOffset4D;
     static float minCameraDistance;
     static double scroll_speed;
     static bool leftButtonPressed;
@@ -59,7 +60,7 @@ private:
 
     glm::vec3 cameraPosition{};
 
-    double mouse_speed = 0.2;
+    double mouse_speed = 0.15;
     static double xpos, ypos;
     double mouse_pos_x = 0.0;
     double mouse_pos_y = 0.0;
@@ -156,6 +157,8 @@ private:
      */
     void computeVertexArray();
 
+    void updateRotations();
+
     /**
      * Load vertices, normals and indices to buffers
      * @param ID of the VAO used to store the data
@@ -193,6 +196,14 @@ private:
      * @param ID of the VAO to draw
      */
     void drawVAOContents(VAO_ID ID);
+
+    /**
+     * Compute distances between each cube's center of mass and the camera
+     * Also save the closest and furthest cube from the origin
+     * Use those to determine which cube must be drawn first
+     * Then draw in order
+     */
+    void drawCubes();
 
     /**
      * Draw the overlay texture to the viewport

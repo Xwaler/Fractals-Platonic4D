@@ -4,9 +4,10 @@ using namespace std;
 
 uint16_t Window::WIDTH = 1280;
 uint16_t Window::HEIGHT = 720;
-float Window::cameraDistance = 20.0f;
-float Window::minCameraDistance = 1.0f;
-double Window::scroll_speed = 1.0f;
+float Window::cameraDistance = 3.0f;
+float Window::cameraOffset4D = 3.0f;
+float Window::minCameraDistance = 0.1f;
+double Window::scroll_speed = 0.2f;
 bool Window::leftButtonPressed = false;
 bool Window::wireframe = false;
 double Window::xpos = 0.0;
@@ -26,9 +27,8 @@ Window::Window() : sponge() {
  */
 void Window::projectHypercubeTo3D() {
     projectedHypercubePoints.clear();
-    float T = 1.0f / glm::tan(fov / 2.0f);
     for (glm::vec4 &V: hypercubePoints) {
-        projectedHypercubePoints.push_back(glm::vec3(V) * V.w * T);
+        projectedHypercubePoints.push_back(glm::vec3(V) / (cameraOffset4D - V.w));
     }
 }
 
@@ -57,8 +57,8 @@ void Window::createMengerSpongeLikeHypercube() {
             { 1, 0, 3, 2, 9, 8, 11, 10 },
             { 6, 7, 2, 3, 14, 15, 10, 11 },
             { 5, 4, 1, 0, 13, 12, 9, 8 },
-            { 0, 1, 2, 3, 4, 5, 6, 7 },
             { 8, 9, 10, 11, 12, 13, 14, 15 },
+            { 0, 1, 2, 3, 4, 5, 6, 7 },
     };
     cubesColors[VAO_ID::PX] = glm::vec3(235, 158, 160) / 255.0f;
     cubesColors[VAO_ID::NX] = glm::vec3(36, 106, 222) / 255.0f;
@@ -66,8 +66,8 @@ void Window::createMengerSpongeLikeHypercube() {
     cubesColors[VAO_ID::NY] = glm::vec3(247, 246, 76) / 255.0f;
     cubesColors[VAO_ID::PZ] = glm::vec3(227, 222, 213) / 255.0f;
     cubesColors[VAO_ID::NZ] = glm::vec3(254, 165, 57) / 255.0f;
-    cubesColors[VAO_ID::PW] = glm::vec3(106, 255, 188) / 255.0f;
-    cubesColors[VAO_ID::NW] = glm::vec3(204, 101, 42) / 255.0f;
+    cubesColors[VAO_ID::PW] = glm::vec3(204, 101, 42) / 255.0f;
+    cubesColors[VAO_ID::NW] = glm::vec3(106, 255, 188) / 255.0f;
 
     /* Project from 4D to 3D */
     projectHypercubeTo3D();
@@ -82,7 +82,6 @@ void Window::createMengerSpongeLikeHypercube() {
  * Render loop, compute view and projection matrix then calls drawVAOContents for each VAO
  */
 void Window::renderMengerSpongeLikeHypercube() {
-    glm::vec4 color;
     while (continueLoop()) {
         /* Draw the background and clear OpenGL render bits */
         clear();
@@ -103,127 +102,11 @@ void Window::renderMengerSpongeLikeHypercube() {
         loadUniformMat4f(programMain, "view", view);
         loadUniformMat4f(programMain, "projection", projection);
 
-        if (spongeWorker != nullptr && spongeWorkerHasFinished) {
-            spongeWorker->join();
-            spongeWorker = nullptr;
-        }
+        /* Update hypercube rotations if the user changed them */
+        updateRotations();
 
-        if (spongeWorker == nullptr && vertexComputationUpdated) {
-            for (uint8_t ID = 0; ID < 8; ++ID) {
-                fillSpongeVertexArray((VAO_ID) ID);
-            }
-            vertexComputationUpdated = false;
-        }
-
-        /* If the user changed the rotation parameters, re-compute hypercube and sponge vertices */
-        if (menu.rotationWasModified) {
-            menu.rotationWasModified = false;
-            /* Reset transformations */
-            init4DRotations();
-            /* Apply all 4D rotations */
-            if (menu.getGaugeValue(Gauges::ROTATION_XY) != 0) {
-                rotateXY(menu.getGaugeValue(Gauges::ROTATION_XY) * PI2);
-            }
-            if (menu.getGaugeValue(Gauges::ROTATION_YZ) != 0) {
-                rotateYZ(menu.getGaugeValue(Gauges::ROTATION_YZ) * PI2);
-            }
-            if (menu.getGaugeValue(Gauges::ROTATION_ZX) != 0) {
-                rotateZX(menu.getGaugeValue(Gauges::ROTATION_ZX) * PI2);
-            }
-            if (menu.getGaugeValue(Gauges::ROTATION_XW) != 0) {
-                rotateXW(menu.getGaugeValue(Gauges::ROTATION_XW) * PI2);
-            }
-            if (menu.getGaugeValue(Gauges::ROTATION_YW) != 0) {
-                rotateYW(menu.getGaugeValue(Gauges::ROTATION_YW) * PI2);
-            }
-            if (menu.getGaugeValue(Gauges::ROTATION_ZW) != 0) {
-                rotateZW(menu.getGaugeValue(Gauges::ROTATION_ZW) * PI2);
-            }
-            /* Project from 4D to 3D */
-            projectHypercubeTo3D();
-            /* Re-create cubes */
-            for (uint8_t i = 0; i < 8; ++i) {
-                create3DCube((VAO_ID) i);
-            }
-
-            spongeDepth = 1;
-            if (spongeWorker != nullptr) {
-                Sponge::killComputation = true;
-                spongeWorker->join();
-            }
-            Sponge::killComputation = false;
-            spongeWorkerHasFinished = false;
-            spongeWorker = new thread(&Window::computeVertexArray, this);
-        }
-
-        if (spongeWorker == nullptr && spongeDepth != maxSpongeDepth) {
-            spongeDepth = min((uint8_t) (spongeDepth + 1), maxSpongeDepth);
-            Sponge::killComputation = false;
-            spongeWorkerHasFinished = false;
-            spongeWorker = new thread(&Window::computeVertexArray, this);
-        }
-
-        vector<double> distances;
-        vector<uint32_t> indexSortedDistance;
-        /* Compute distances between each cube's center of mass and the camera */
-        for (uint8_t i = 0; i < 6; ++i) {
-            glm::vec3 centerOfMass(0.0f);
-            for (uint16_t j = 0; j < (uint16_t) points[(VAO_ID) i].size(); j += 3) {
-                float *p = &(points[(VAO_ID) i][j]);
-                centerOfMass += glm::vec3(*(p + 0), *(p + 1), *(p + 2));
-            }
-            distances.push_back(glm::length(cameraPosition - centerOfMass / (float) points[(VAO_ID) i].size()));
-        }
-        /* Initialize indices for synchronised sorting */
-        for (uint32_t i = 0; i < distances.size(); ++i) {
-            indexSortedDistance.push_back(i);
-        }
-        /* Sorts distances and indices together so that we can access our model matrices by index */
-        for (uint32_t i = 0; i < distances.size(); ++i) {
-            for (uint32_t j = i; j < distances.size(); ++j) {
-                if (distances[i] < distances[j]) {
-                    double tmpDistance = distances[i]; uint32_t tmpIndex = indexSortedDistance[i];
-                    distances[i] = distances[j];
-                    distances[j] = tmpDistance;
-                    indexSortedDistance[i] = indexSortedDistance[j];
-                    indexSortedDistance[j] = tmpIndex;
-                }
-            }
-        }
-
-        /* Draw the first half faces in from back to front, following the sorted indices/distances */
-        for (uint32_t i = 0; i < indexSortedDistance.size() / 2; ++i) {
-            uint8_t index = indexSortedDistance[i];
-            /* Set and push vertices color to the gpu through uniform */
-            color = glm::vec4(cubesColors[(VAO_ID) index], menu.getGaugeValue((Gauges) index));
-            loadUniformVec4f(programMain, "color", color);
-            /* Draw from the vertex array */
-            drawVAOContents((VAO_ID) index);
-        }
-
-        /* Draw the center cube */
-        /* Set and push vertices color to the gpu through uniform */
-        color = glm::vec4(cubesColors[VAO_ID::PW], menu.getGaugeValue(Gauges::TRANSPARENCY_NW));
-        loadUniformVec4f(programMain, "color", color);
-        /* Draw from the vertex array */
-        drawVAOContents(VAO_ID::PW);
-
-        /* Draw the second half faces in from back to front, following the sorted indices/distances */
-        for (uint32_t i = indexSortedDistance.size() / 2; i < indexSortedDistance.size(); ++i) {
-            uint8_t index = indexSortedDistance[i];
-            /* Set and push vertices color to the gpu through uniform */
-            color = glm::vec4(cubesColors[(VAO_ID) index], menu.getGaugeValue((Gauges) index));
-            loadUniformVec4f(programMain, "color", color);
-            /* Draw from the vertex array */
-            drawVAOContents((VAO_ID) index);
-        }
-
-        /* Draw the big cube */
-        /* Set and push vertices color to the gpu through uniform */
-        color = glm::vec4(cubesColors[VAO_ID::NW], menu.getGaugeValue(Gauges::TRANSPARENCY_PW));
-        loadUniformVec4f(programMain, "color", color);
-        /* Draw from the vertex array */
-        drawVAOContents(VAO_ID::NW);
+        /* Draw the cubes in back to front order */
+        drawCubes();
 
         /* Draw overlay over the viewport */
         drawOverlay();
@@ -319,7 +202,6 @@ void Window::initOpenGL() {
     /* Enable some opengl capacities */
     enableBlending();
     enableDepthTest();
-    enableFaceCulling();
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_LINE_SMOOTH);
@@ -373,8 +255,7 @@ void Window::computeVertexArray() {
             normals[ID].clear();
             /* Generate Menger's Sponge vertices and indices */
             sponge.subdivide(spongeDepth, points[ID], vertices[ID], indices[ID]);
-            cout << "VAO[" << (VAO_ID) ID << "]: subdivided to " << vertices[ID].size() << " vertices and " << indices[ID].size()
-                 << " indices" << endl;
+            cout << "VAO[" << (VAO_ID) ID << "]: subdivided to " << vertices[ID].size() << " vertices and " << indices[ID].size() << " indices" << endl;
             /* Duplicate vertices used by many "sides" to allow calculation of independent vertices normals */
             Sponge::duplicateVertices(vertices[ID], indices[ID]);
             cout << "VAO[" << (VAO_ID) ID << "]: duplicated to " << vertices[ID].size() << " vertices" << endl;
@@ -387,6 +268,68 @@ void Window::computeVertexArray() {
     } catch (const std::exception& e) {
         cout << e.what() << endl;
         return;
+    }
+}
+
+void Window::updateRotations() {
+    if (spongeWorker != nullptr && spongeWorkerHasFinished) {
+        spongeWorker->join();
+        spongeWorker = nullptr;
+    }
+
+    if (spongeWorker == nullptr && vertexComputationUpdated) {
+        for (uint8_t ID = 0; ID < 8; ++ID) {
+            fillSpongeVertexArray((VAO_ID) ID);
+        }
+        vertexComputationUpdated = false;
+    }
+
+    /* If the user changed the rotation parameters, re-compute hypercube and sponge vertices */
+    if (menu.rotationWasModified) {
+        menu.rotationWasModified = false;
+        /* Reset transformations */
+        init4DRotations();
+        /* Apply all 4D rotations */
+        if (menu.getGaugeValue(Gauges::ROTATION_XY) != 0) {
+            rotateXY(menu.getGaugeValue(Gauges::ROTATION_XY) * PI2);
+        }
+        if (menu.getGaugeValue(Gauges::ROTATION_YZ) != 0) {
+            rotateYZ(menu.getGaugeValue(Gauges::ROTATION_YZ) * PI2);
+        }
+        if (menu.getGaugeValue(Gauges::ROTATION_ZX) != 0) {
+            rotateZX(menu.getGaugeValue(Gauges::ROTATION_ZX) * PI2);
+        }
+        if (menu.getGaugeValue(Gauges::ROTATION_XW) != 0) {
+            rotateXW(menu.getGaugeValue(Gauges::ROTATION_XW) * PI2);
+        }
+        if (menu.getGaugeValue(Gauges::ROTATION_YW) != 0) {
+            rotateYW(menu.getGaugeValue(Gauges::ROTATION_YW) * PI2);
+        }
+        if (menu.getGaugeValue(Gauges::ROTATION_ZW) != 0) {
+            rotateZW(menu.getGaugeValue(Gauges::ROTATION_ZW) * PI2);
+        }
+        /* Project from 4D to 3D */
+        projectHypercubeTo3D();
+        /* Re-create cubes */
+        for (uint8_t i = 0; i < 8; ++i) {
+            create3DCube((VAO_ID) i);
+        }
+
+        spongeDepth = 1;
+        if (spongeWorker != nullptr) {
+            Sponge::killComputation = true;
+            spongeWorker->join();
+        }
+        Sponge::killComputation = false;
+        spongeWorkerHasFinished = false;
+        spongeWorker = new thread(&Window::computeVertexArray, this);
+    }
+
+    if (spongeWorker == nullptr && spongeDepth != maxSpongeDepth && !wireframe) {
+        spongeDepth = min((uint8_t) (spongeDepth + 1), maxSpongeDepth);
+        Sponge::killComputation = false;
+        spongeWorkerHasFinished = false;
+        spongeWorker = new thread(&Window::computeVertexArray, this);
     }
 }
 
@@ -463,6 +406,102 @@ void Window::drawVAOContents(VAO_ID ID) {
 }
 
 /**
+ * Compute distances between each cube's center of mass and the camera
+ * Also save the closest and furthest cube from the origin
+ * Use those to determine which cube must be drawn first
+ * Then draw in order
+ */
+void Window::drawCubes() {
+    glm::vec4 color;
+    vector<double> distances;
+    vector<uint32_t> indexSortedDistance;
+    uint32_t inner; uint32_t outer;
+    float innerNorm = 1e9f; float outerNorm = 0.0f;
+
+    for (uint8_t i = 0; i < 8; ++i) {
+        glm::vec3 centerOfMass(0.0f); glm::vec3 summedCoords(0.0f);
+        glm::vec3 pos;
+        for (uint16_t j = 0; j < (uint16_t) points[(VAO_ID) i].size(); j += 3) {
+            float *p = &(points[(VAO_ID) i][j]);
+            pos = glm::vec3(*(p + 0), *(p + 1), *(p + 2));
+            centerOfMass += pos;
+            summedCoords += glm::abs(pos);
+        }
+        distances.push_back(glm::length(cameraPosition - centerOfMass / (float) points[(VAO_ID) i].size()));
+
+        float norm = glm::length(summedCoords);
+        if (norm < innerNorm) {
+            innerNorm = norm;
+            inner = i;
+        }
+        if (norm > outerNorm) {
+            outerNorm = norm;
+            outer = i;
+        }
+    }
+    /* Initialize indices for synchronised sorting */
+    for (uint32_t i = 0; i < distances.size(); ++i) {
+        indexSortedDistance.push_back(i);
+    }
+    /* Sorts distances and indices together so that we can access our model matrices by index */
+    for (uint32_t i = 0; i < distances.size(); ++i) {
+        for (uint32_t j = i; j < distances.size(); ++j) {
+            if (distances[i] < distances[j]) {
+                double tmpDistance = distances[i]; uint32_t tmpIndex = indexSortedDistance[i];
+                distances[i] = distances[j];
+                distances[j] = tmpDistance;
+                indexSortedDistance[i] = indexSortedDistance[j];
+                indexSortedDistance[j] = tmpIndex;
+            }
+        }
+    }
+
+    uint32_t drawn = 0; uint32_t i = 0;
+    /* Draw the first half faces in from back to front, following the sorted indices/distances
+     * and ignoring the inner most and outer most cubes */
+    do {
+        uint8_t index = indexSortedDistance[i++];
+        if (index == inner || index == outer) continue;
+
+        /* Set and push vertices color to the gpu through uniform */
+        color = glm::vec4(cubesColors[(VAO_ID) index], menu.getGaugeValue((Gauges) index));
+        loadUniformVec4f(programMain, "color", color);
+        /* Draw from the vertex array */
+        drawVAOContents((VAO_ID) index);
+        drawn++;
+    } while (drawn < 3);
+
+    /* Draw the inner most cube */
+    /* Set and push vertices color to the gpu through uniform */
+    color = glm::vec4(cubesColors[inner], menu.getGaugeValue((Gauges) inner));
+    loadUniformVec4f(programMain, "color", color);
+    /* Draw from the vertex array */
+    drawVAOContents((VAO_ID) inner);
+    drawn++;
+
+    /* Draw the second half faces in from back to front, following the sorted indices/distances
+     * and ignoring the inner most and outer most cubes */
+    do {
+        uint8_t index = indexSortedDistance[i++];
+        if (index == inner || index == outer) continue;
+
+        /* Set and push vertices color to the gpu through uniform */
+        color = glm::vec4(cubesColors[(VAO_ID) index], menu.getGaugeValue((Gauges) index));
+        loadUniformVec4f(programMain, "color", color);
+        /* Draw from the vertex array */
+        drawVAOContents((VAO_ID) index);
+        drawn++;
+    } while (drawn < 7);
+
+    /* Draw the outer most cube */
+    /* Set and push vertices color to the gpu through uniform */
+    color = glm::vec4(cubesColors[outer], menu.getGaugeValue((Gauges) outer));
+    loadUniformVec4f(programMain, "color", color);
+    /* Draw from the vertex array */
+    drawVAOContents((VAO_ID) outer);
+}
+
+/**
  * Draw the overlay texture to the viewport
  */
 void Window::drawOverlay() {
@@ -471,6 +510,8 @@ void Window::drawOverlay() {
     glUseProgram(programTexture);
     /* Disable depth test to ensure the overlay to be on top of everything */
     disableDepthTest();
+    /* Temporarily disable wireframe mode */
+    if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     /* Activate our texture ID and fill it with the image data */
     glActiveTexture(GL_TEXTURE0 + TEXTURE_ID::OVERLAY_TEXTURE);
@@ -484,6 +525,7 @@ void Window::drawOverlay() {
     loadUniform1f(programTexture, "overlayTexture", TEXTURE_ID::OVERLAY_TEXTURE);
     glDrawElements(GL_TRIANGLES, (int32_t) indices[VAO_ID::OVERLAY].size(), GL_UNSIGNED_INT, nullptr);
 
+    if (wireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     /* Re-enable for following draws */
     enableDepthTest();
     glUseProgram(programMain);
@@ -494,8 +536,8 @@ void Window::drawOverlay() {
  */
 void Window::enableBlending() {
     glEnable(GL_BLEND);
+    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
-    glBlendEquation(GL_FUNC_ADD);
 }
 
 /**
@@ -503,7 +545,7 @@ void Window::enableBlending() {
  */
 void Window::enableDepthTest() {
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GL_LEQUAL);
 }
 
 /**
@@ -657,6 +699,7 @@ void Window::key_callback(GLFWwindow* window, int key, int scancode, int action,
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) { // toggle wireframe display mode
         wireframe = !wireframe;
         wireframe ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE): glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        menu.rotationWasModified = true;
     }
 }
 
@@ -701,7 +744,7 @@ void Window::scroll_callback(GLFWwindow* w, double xoffset, double yoffset) {
  */
 void Window::clear() {
     glClearColor(0.8f, 0.8f, 0.8f, 1.0f); // reset background color
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear opengl buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // clear opengl buffers
 }
 
 /**
