@@ -14,6 +14,9 @@
 
 using namespace std;
 
+/**
+ * Exception used to interrupt the computation of vertices if the result isn't needed anymore
+ */
 struct WorkerKilled : public exception {
     const char * what () const throw () {
         return "SpongeWorker was purposely killed";
