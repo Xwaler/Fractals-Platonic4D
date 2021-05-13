@@ -187,7 +187,7 @@ void Window::initOpenGL() {
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_LINE_SMOOTH);
-    glLineWidth(4);
+    glLineWidth(3);
 }
 
 /**
@@ -455,6 +455,15 @@ void Window::loadUniform1f(uint32_t program, const char *name, float value) {
 }
 
 /**
+ * Sends a integer to a GPU uniform
+ * @param name of the uniform in the shader
+ * @param vec to send
+ */
+void Window::loadUniform1i(uint32_t program, const char *name, int32_t value) {
+    glUniform1i(glGetUniformLocation(program, name), value);
+}
+
+/**
  * Binds the selected VAO and draw it's content
  * @param ID of the VAO to draw
  */
@@ -525,7 +534,7 @@ void Window::drawCubes() {
     }
 
     uint32_t drawn = 0; uint32_t i = 0;
-    /* Draw the first half faces in from back to front, following the sorted indices/distances
+    /* Draw the first half cubes in from back to front, following the sorted indices/distances
      * and ignoring the inner most and outer most cubes */
     do {
         uint8_t index = indexSortedDistance[i++];
@@ -534,6 +543,7 @@ void Window::drawCubes() {
         /* Set and push vertices color to the gpu through uniform */
         color = glm::vec4(cubesColors[(VAO_ID) index], menu.getGaugeValue((Gauges) index));
         loadUniformVec4f(programMain, "color", color);
+        loadUniform1i(programMain, "drawIndex", 4 - (int32_t) drawn);
         /* Draw from the vertex array */
         drawVAOContents((VAO_ID) index);
         drawn++;
@@ -543,11 +553,12 @@ void Window::drawCubes() {
     /* Set and push vertices color to the gpu through uniform */
     color = glm::vec4(cubesColors[inner], menu.getGaugeValue((Gauges) inner));
     loadUniformVec4f(programMain, "color", color);
+    loadUniform1i(programMain, "drawIndex", 4 - (int32_t) drawn);
     /* Draw from the vertex array */
     drawVAOContents((VAO_ID) inner);
     drawn++;
 
-    /* Draw the second half faces in from back to front, following the sorted indices/distances
+    /* Draw the second half cubes in from back to front, following the sorted indices/distances
      * and ignoring the inner most and outer most cubes */
     do {
         uint8_t index = indexSortedDistance[i++];
@@ -556,6 +567,7 @@ void Window::drawCubes() {
         /* Set and push vertices color to the gpu through uniform */
         color = glm::vec4(cubesColors[(VAO_ID) index], menu.getGaugeValue((Gauges) index));
         loadUniformVec4f(programMain, "color", color);
+        loadUniform1i(programMain, "drawIndex", 4 - (int32_t) drawn);
         /* Draw from the vertex array */
         drawVAOContents((VAO_ID) index);
         drawn++;
@@ -565,6 +577,7 @@ void Window::drawCubes() {
     /* Set and push vertices color to the gpu through uniform */
     color = glm::vec4(cubesColors[outer], menu.getGaugeValue((Gauges) outer));
     loadUniformVec4f(programMain, "color", color);
+    loadUniform1i(programMain, "drawIndex", 4 - (int32_t) drawn);
     /* Draw from the vertex array */
     drawVAOContents((VAO_ID) outer);
 }

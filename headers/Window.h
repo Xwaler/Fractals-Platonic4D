@@ -215,6 +215,13 @@ private:
     static void loadUniform1f(uint32_t program, const char *name, float value);
 
     /**
+     * Sends an integer to a GPU uniform
+     * @param name of the uniform in the shader
+     * @param vec to send
+     */
+    static void loadUniform1i(uint32_t program, const char *name, int32_t value);
+
+    /**
      * Binds the selected VAO and draw it's content
      * @param ID of the VAO to draw
      */
