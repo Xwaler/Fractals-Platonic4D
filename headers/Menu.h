@@ -30,7 +30,8 @@ enum Gauges {
     ROTATION_XW = 11,
     ROTATION_YW = 12,
     ROTATION_ZW = 13,
-    GAUGE_NUMBER = 14,
+    UNFOLDING = 14,
+    GAUGE_NUMBER = 15,
 };
 
 /**
@@ -141,6 +142,8 @@ private:
             { MenuProperties::width - 210, 110, 200, 10, 0, 1 },
             { MenuProperties::width - 210, 140, 200, 10, 0, 1 },
             { MenuProperties::width - 210, 170, 200, 10, 0, 1 },
+
+            { MenuProperties::width / 2 - 100, 20, 200, 10, 0, 0 },
     };
     std::string gaugeTexts[Gauges::GAUGE_NUMBER] {
             "PX transparency",
@@ -158,6 +161,8 @@ private:
             "XW rotation",
             "YW rotation",
             "ZW rotation",
+
+            "Unfolding",
     };
     std::vector<uint16_t> resetButtonProperties {
             MenuProperties::width - 60, MenuProperties::height - 30, 50, 20,

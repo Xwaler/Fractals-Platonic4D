@@ -57,13 +57,21 @@ void Window::createMengerSpongeLikeHypercube() {
     cubesIndices = {
             { 1, 3, 5, 7, 9, 11, 13, 15 },
             { 2, 0, 6, 4, 10, 8, 14, 12 },
-            { 4, 5, 6, 7, 12, 13, 14, 15 },
-            { 1, 0, 3, 2, 9, 8, 11, 10 },
             { 6, 7, 2, 3, 14, 15, 10, 11 },
             { 5, 4, 1, 0, 13, 12, 9, 8 },
+            { 4, 5, 6, 7, 12, 13, 14, 15 },
+            { 1, 0, 3, 2, 9, 8, 11, 10 },
             { 8, 9, 10, 11, 12, 13, 14, 15 },
             { 0, 1, 2, 3, 4, 5, 6, 7 },
     };
+    unfoldAxis[VAO_ID::PX] = glm::vec3(1, 0, 0);
+    unfoldAxis[VAO_ID::NX] = glm::vec3(-1, 0, 0);
+    unfoldAxis[VAO_ID::PY] = glm::vec3(0, 1, 0);
+    unfoldAxis[VAO_ID::NY] = glm::vec3(0, -1, 0);
+    unfoldAxis[VAO_ID::PZ] = glm::vec3(0, 0, 1);
+    unfoldAxis[VAO_ID::NZ] = glm::vec3(0, 0, -1);
+    unfoldAxis[VAO_ID::PW] = glm::vec3(0, -2, 0);
+    unfoldAxis[VAO_ID::NW] = glm::vec3(0, 0, 0);
     cubesColors[VAO_ID::PX] = glm::vec3(235, 158, 160) / 255.0f;
     cubesColors[VAO_ID::NX] = glm::vec3(36, 106, 222) / 255.0f;
     cubesColors[VAO_ID::PY] = glm::vec3(124, 41, 141) / 255.0f;
@@ -119,7 +127,7 @@ void Window::renderMengerSpongeLikeHypercube() {
         loadUniformMat4f(programMain, "view", view);
         loadUniformMat4f(programMain, "projection", projection);
 
-        /* Update hypercube rotations if the user changed them */
+        /* Update sponge depth workers and hypercube rotations if the user changed them */
         update();
 
         if (wire_mesh) {
@@ -473,7 +481,8 @@ void Window::drawVAOContents(VAO_ID ID) {
     glUseProgram(programMain);
 
     /* Model matrix */
-    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 model = glm::mat4(1.0f) + glm::translate(glm::mat4(menu.getGaugeValue(Gauges::UNFOLDING)), 2.0f * unfoldAxis[ID]);
+
     /* Push model matrix to gpu through uniform */
     loadUniformMat4f(programMain, "model", model);
     /* Draw vertices and create fragments with triangles */

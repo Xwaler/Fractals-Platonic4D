@@ -95,6 +95,7 @@ private:
     bool spongeWorkerHasFinished = true;
     bool vertexComputationUpdated = false;
 
+    glm::vec3 unfoldAxis[VAO_ID::NUMBER]{};
     glm::vec3 cubesColors[VAO_ID::NUMBER]{};
 
     static Menu menu;
